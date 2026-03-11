@@ -18,6 +18,16 @@ Works with any USB-to-CAN adapter running **gs_usb compatible firmware** (candle
 - **HTTPS** or **localhost** (WebUSB requires a secure context)
 - CAN adapter with **gs_usb / candleLight firmware**
 
+## Usage
+
+Serve the project over HTTP (ES modules require it — `file://` will not work):
+
+```sh
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000` in Chrome or Edge. Connect your CAN adapter, select the bitrate and mode, and click **Connect**.
+
 ## How It Works
 
 The app implements the **gs_usb protocol** over WebUSB:
@@ -27,3 +37,7 @@ The app implements the **gs_usb protocol** over WebUSB:
 3. **Data transfer** — CAN frames are sent/received as 20-byte `gs_host_frame` structs over USB bulk endpoints
 4. **Serialized TX** — all outbound frames go through a single queue to prevent USB contention
 5. **Throttled rendering** — the UI updates at a fixed rate (5Hz) regardless of bus speed, keeping the browser responsive
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
