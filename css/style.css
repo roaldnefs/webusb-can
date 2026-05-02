@@ -599,6 +599,17 @@ select option { background: var(--bg-secondary); }
 .add-signal-row .sig-data-input { flex: 2; }
 .add-signal-row .sig-ms-input { width: 50px; }
 
+.uds-id-row {
+  display: flex;
+  gap: 6px;
+}
+
+.uds-id-row input {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 0;
+}
+
 /* ─── Device Info ─── */
 .device-info-grid {
   display: grid;

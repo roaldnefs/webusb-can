@@ -119,6 +119,22 @@
         </div>
       </div>
 
+      <div class="panel-title">UDS</div>
+      <div class="card">
+        <div class="form-group">
+          <label>TX / RX ID (hex)</label>
+          <div class="uds-id-row">
+            <input type="text" id="udsTxId" placeholder="7E0" value="7E0">
+            <input type="text" id="udsRxId" placeholder="7E8" value="7E8">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Request bytes (hex)</label>
+          <input type="text" id="udsRequest" placeholder="22 F1 90" value="22 F1 90">
+        </div>
+        <button class="btn btn-sm" onclick="handleUdsSend()">Send Request</button>
+      </div>
+
     </aside>
 
     <!-- Content Area -->
@@ -149,6 +165,7 @@
           <span class="filter-chip active" onclick="setFilter('all', this)">All</span>
           <span class="filter-chip" onclick="setFilter('rx', this)">RX</span>
           <span class="filter-chip" onclick="setFilter('tx', this)">TX</span>
+          <span class="filter-chip" onclick="setFilter('uds', this)">UDS</span>
         </div>
         <input type="text" id="filterInput" placeholder="Filter by ID (hex, e.g. 7DF or 0x123)" style="width:220px; font-size:12px; padding:5px 10px;">
       </div>

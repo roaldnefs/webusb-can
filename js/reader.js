@@ -5,6 +5,19 @@
 import { state } from './state.js';
 import { addLogEntry, addSystemLog } from './ui.js';
 
+// Fan-out: callbacks registered per CAN ID, fired on every received bus frame
+// (after logging, errors filtered, TX echoes filtered).
+const rxListeners = new Map();
+
+export function onCanFrame(canId, cb) {
+  if (!rxListeners.has(canId)) rxListeners.set(canId, new Set());
+  rxListeners.get(canId).add(cb);
+  return () => {
+    const set = rxListeners.get(canId);
+    if (set) set.delete(cb);
+  };
+}
+
 export function startReading() {
   if (state.readLoopRunning) return; // prevent duplicate loops
   if (!state.device || !state.device.opened) return;
@@ -67,6 +80,13 @@ export function startReading() {
             isExtended: isExt,
             isRTR,
           });
+
+          const subs = rxListeners.get(rawId);
+          if (subs && subs.size > 0) {
+            for (const cb of subs) {
+              try { cb(dataBytes); } catch (e) { console.error('RX listener error:', e); }
+            }
+          }
 
         } else if (result.status === 'ok' && result.data) {
           if (state.debugMode) {

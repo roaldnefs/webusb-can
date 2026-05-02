@@ -17,6 +17,33 @@ function getIdFilter() {
   return raw;
 }
 
+// Build the set of zero-padded ID strings to match for the "UDS" filter chip.
+// Reads the UDS panel inputs live so changes apply on the next render tick.
+function getUdsIdSet() {
+  const ids = new Set();
+  const tx = document.getElementById('udsTxId');
+  const rx = document.getElementById('udsRxId');
+  for (const el of [tx, rx]) {
+    if (!el) continue;
+    const v = parseInt(el.value.trim().replace(/^0[xX]/, ''), 16);
+    if (isNaN(v)) continue;
+    ids.add(v > 0x7FF
+      ? v.toString(16).toUpperCase().padStart(8, '0')
+      : v.toString(16).toUpperCase().padStart(3, '0'));
+  }
+  return ids;
+}
+
+function entryMatchesDirFilter(entry, udsIds) {
+  switch (state.currentFilter) {
+    case 'all': return true;
+    case 'rx':
+    case 'tx': return entry.dir === state.currentFilter;
+    case 'uds': return udsIds.has(entry.id);
+    default: return true;
+  }
+}
+
 export function updateConnectionUI() {
   const chip = document.getElementById('statusChip');
   const text = document.getElementById('statusText');
@@ -108,6 +135,7 @@ export function renderTick() {
 
   const scroll = document.getElementById('logScroll');
   const filterInput = getIdFilter();
+  const udsIds = state.currentFilter === 'uds' ? getUdsIdSet() : null;
   const fragment = document.createDocumentFragment();
   let added = 0;
 
@@ -116,7 +144,7 @@ export function renderTick() {
 
   for (let i = startIdx; i < entries.length; i++) {
     const entry = entries[i];
-    if (state.currentFilter !== 'all' && entry.dir !== state.currentFilter) continue;
+    if (!entryMatchesDirFilter(entry, udsIds)) continue;
     if (filterInput && !entry.id.includes(filterInput)) continue;
 
     const div = document.createElement('div');
@@ -200,11 +228,12 @@ export function rebuildLog() {
   }
 
   const filterInput = getIdFilter();
+  const udsIds = state.currentFilter === 'uds' ? getUdsIdSet() : null;
   const fragment = document.createDocumentFragment();
 
   // Only render the last MAX_DOM_ENTRIES matching entries
   const matching = state.logEntries.filter(entry => {
-    if (state.currentFilter !== 'all' && entry.dir !== state.currentFilter) return false;
+    if (!entryMatchesDirFilter(entry, udsIds)) return false;
     if (filterInput && !entry.id.includes(filterInput)) return false;
     return true;
   });
