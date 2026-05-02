@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════
 
 const FLASH_MS = 1000;
+const STALE_MS = 5000;
 
 // Aggregate state per CAN ID.
 const rows = new Map();
@@ -90,6 +91,9 @@ function updateRowElement(el, row, idStr, now) {
   el.cycleCell.textContent = row.cycleMs > 0 ? row.cycleMs.toFixed(1) : '--';
   el.countCell.textContent = row.count;
   el.dlcCell.textContent = `[${row.dlc}]`;
+
+  const stale = now - row.lastSeen > STALE_MS;
+  el.tr.classList.toggle('stale', stale);
 
   for (let i = 0; i < 8; i++) {
     const b = el.byteCells[i];

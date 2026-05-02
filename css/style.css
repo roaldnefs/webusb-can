@@ -458,6 +458,11 @@ select option { background: var(--bg-secondary); }
 
 .sniff-row:hover { background: rgba(59, 130, 246, 0.04); }
 
+.sniff-row.stale {
+  opacity: 0.4;
+  transition: opacity 0.4s ease-out;
+}
+
 .sniff-header {
   position: sticky;
   top: 0;
