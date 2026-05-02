@@ -45,6 +45,34 @@ function entryMatchesDirFilter(entry, udsIds) {
   }
 }
 
+function buildLogRow(entry) {
+  const row = document.createElement('div');
+  row.className = entry.dir === 'tx' ? 'log-entry tx-row' : 'log-entry';
+
+  const time = document.createElement('span');
+  time.className = 'log-time';
+  time.textContent = entry.time;
+
+  const dir = document.createElement('span');
+  dir.className = `log-dir ${entry.dir}`;
+  dir.textContent = entry.dir.toUpperCase();
+
+  const id = document.createElement('span');
+  id.className = 'log-id';
+  id.textContent = entry.id;
+
+  const data = document.createElement('span');
+  data.className = 'log-data';
+  data.textContent = entry.data;
+
+  const dlc = document.createElement('span');
+  dlc.className = 'log-dlc';
+  dlc.textContent = `[${entry.dlc}]`;
+
+  row.append(time, dir, id, data, dlc);
+  return row;
+}
+
 export function updateConnectionUI() {
   const chip = document.getElementById('statusChip');
   const text = document.getElementById('statusText');
@@ -170,10 +198,7 @@ export function renderTick() {
     if (!entryMatchesDirFilter(entry, udsIds)) continue;
     if (filterInput && !entry.id.includes(filterInput)) continue;
 
-    const div = document.createElement('div');
-    div.className = entry.dir === 'tx' ? 'log-entry tx-row' : 'log-entry';
-    div.innerHTML = `<span class="log-time">${entry.time}</span><span class="log-dir ${entry.dir}">${entry.dir.toUpperCase()}</span><span class="log-id">${entry.id}</span><span class="log-data">${entry.data}</span><span class="log-dlc">[${entry.dlc}]</span>`;
-    fragment.appendChild(div);
+    fragment.appendChild(buildLogRow(entry));
     added++;
   }
 
@@ -206,17 +231,10 @@ export function togglePause() {
   state.isPaused = !state.isPaused;
   const btn = document.getElementById('pauseBtn');
 
-  if (state.isPaused) {
-    btn.textContent = 'Resume (0)';
-    btn.style.borderColor = 'rgba(245, 158, 11, 0.4)';
-    btn.style.color = 'var(--accent-amber)';
-    btn.style.background = 'rgba(245, 158, 11, 0.1)';
-  } else {
-    btn.textContent = 'Pause';
-    btn.style.borderColor = '';
-    btn.style.color = '';
-    btn.style.background = '';
+  btn.classList.toggle('paused', state.isPaused);
+  btn.textContent = state.isPaused ? 'Resume (0)' : 'Pause';
 
+  if (!state.isPaused) {
     // Flush buffered entries — only render the tail
     if (state.pauseBuffer.length > 0) {
       const tail = state.pauseBuffer.slice(-MAX_RENDER_BATCH);
@@ -263,11 +281,7 @@ export function rebuildLog() {
 
   const start = Math.max(0, matching.length - MAX_DOM_ENTRIES);
   for (let i = start; i < matching.length; i++) {
-    const entry = matching[i];
-    const div = document.createElement('div');
-    div.className = entry.dir === 'tx' ? 'log-entry tx-row' : 'log-entry';
-    div.innerHTML = `<span class="log-time">${entry.time}</span><span class="log-dir ${entry.dir}">${entry.dir.toUpperCase()}</span><span class="log-id">${entry.id}</span><span class="log-data">${entry.data}</span><span class="log-dlc">[${entry.dlc}]</span>`;
-    fragment.appendChild(div);
+    fragment.appendChild(buildLogRow(matching[i]));
   }
 
   scroll.appendChild(fragment);
@@ -312,9 +326,13 @@ export function exportLog() {
     return;
   }
 
+  const csvField = (v) => {
+    const s = String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
   let csv = 'Timestamp,Direction,ID,DLC,Data\n';
   state.logEntries.forEach(e => {
-    csv += `${e.time},${e.dir},${e.id},${e.dlc},"${e.data}"\n`;
+    csv += [e.time, e.dir, e.id, e.dlc, e.data].map(csvField).join(',') + '\n';
   });
 
   const blob = new Blob([csv], { type: 'text/csv' });

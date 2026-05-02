@@ -316,6 +316,12 @@ body::before {
   border-radius: 8px;
 }
 
+.btn.paused {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--accent-amber);
+  background: rgba(245, 158, 11, 0.1);
+}
+
 /* ─── Form Controls ─── */
 .form-group {
   display: flex;

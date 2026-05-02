@@ -29,8 +29,12 @@ window.state = state;
 
 // ─── Event listeners ──────────────────────────────────
 
-// Filter input
-document.getElementById('filterInput').addEventListener('input', rebuildLog);
+// Filter input — debounce so a fast typist doesn't trigger a full rebuild per keystroke
+let filterDebounce;
+document.getElementById('filterInput').addEventListener('input', () => {
+  clearTimeout(filterDebounce);
+  filterDebounce = setTimeout(rebuildLog, 100);
+});
 
 // Rebuild log when UDS IDs change while UDS chip is active
 for (const id of ['udsTxId', 'udsRxId']) {
