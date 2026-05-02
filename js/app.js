@@ -42,18 +42,22 @@ document.getElementById('sendData').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleSend();
 });
 
-// Handle disconnection events
-navigator.usb.addEventListener('disconnect', event => {
-  if (state.device && event.device === state.device) {
-    stopRepeat();
-    stopAllSignals();
-    state.isConnected = false;
-    state.isStarted = false;
-    state.device = null;
-    updateConnectionUI();
-    addSystemLog('Device was disconnected.');
-  }
-});
+// WebUSB support check — show a blocking overlay and skip USB-dependent setup.
+if (!navigator.usb) {
+  document.getElementById('unsupportedOverlay').hidden = false;
+} else {
+  navigator.usb.addEventListener('disconnect', event => {
+    if (state.device && event.device === state.device) {
+      stopRepeat();
+      stopAllSignals();
+      state.isConnected = false;
+      state.isStarted = false;
+      state.device = null;
+      updateConnectionUI();
+      addSystemLog('Device was disconnected.');
+    }
+  });
+}
 
 // ─── Init ─────────────────────────────────────────────
 
@@ -62,11 +66,6 @@ renderSignals();
 
 // Start the render timer
 setTimeout(renderTick, RENDER_INTERVAL);
-
-// WebUSB support check
-if (!navigator.usb) {
-  addSystemLog('WebUSB is not supported in this browser. Please use Chrome or Edge.');
-}
 
 // ─── UDS handlers ─────────────────────────────────────
 

@@ -152,6 +152,28 @@ body::before {
   overflow-y: auto;
 }
 
+/* Shared thin scrollbar — applies to every scrollable region in the app. */
+.sidebar,
+.log-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.sidebar::-webkit-scrollbar,
+.log-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+
+.sidebar::-webkit-scrollbar-track,
+.log-scroll::-webkit-scrollbar-track { background: transparent; }
+
+.sidebar::-webkit-scrollbar-thumb,
+.log-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.log-scroll::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
 .panel-title {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
@@ -347,10 +369,6 @@ select option { background: var(--bg-secondary); }
   padding: 8px 0;
   scroll-behavior: smooth;
 }
-
-.log-scroll::-webkit-scrollbar { width: 6px; }
-.log-scroll::-webkit-scrollbar-track { background: transparent; }
-.log-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 .log-entry {
   display: grid;
@@ -609,6 +627,88 @@ select option { background: var(--bg-secondary); }
   min-width: 0;
   width: 0;
 }
+
+/* ─── Unsupported-browser overlay ─── */
+.unsupported-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 23, 0.92);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.unsupported-overlay[hidden] { display: none; }
+
+.unsupported-card {
+  position: relative;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-red);
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 0 0 4px var(--glow-red);
+}
+
+.unsupported-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.unsupported-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.unsupported-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-red);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unsupported-card h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.unsupported-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.unsupported-card a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.unsupported-card a:hover { text-decoration: underline; }
 
 /* ─── Device Info ─── */
 .device-info-grid {

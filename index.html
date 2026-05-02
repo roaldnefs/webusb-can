@@ -9,6 +9,18 @@
 </head>
 <body>
 
+<div id="unsupportedOverlay" class="unsupported-overlay" hidden>
+  <div class="unsupported-card">
+    <button class="unsupported-close" aria-label="Close"
+            onclick="document.getElementById('unsupportedOverlay').hidden = true">&times;</button>
+    <div class="unsupported-icon">!</div>
+    <h2>WebUSB is not available</h2>
+    <p>This app needs the WebUSB API to talk to your CAN adapter.</p>
+    <p>Open this page in <strong>Chrome</strong> or <strong>Edge</strong>, served over <strong>HTTPS</strong> or <strong>localhost</strong>.</p>
+    <p><a href="https://caniuse.com/webusb" target="_blank" rel="noopener">See browser support on caniuse.com</a></p>
+  </div>
+</div>
+
 <div class="app" id="app">
   <!-- Header -->
   <header class="header">
