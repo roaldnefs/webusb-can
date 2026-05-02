@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════
 
 import { state, RENDER_INTERVAL, MAX_DOM_ENTRIES, MAX_RENDER_BATCH, MAX_LOG_ENTRIES, LOG_TRIM_BATCH } from './state.js';
+import { ingestFrame, renderSniffer, clearSniffer } from './sniffer.js';
 
 // Read & normalize the ID filter input. Strips a leading 0x/0X.
 // Marks the input invalid (and returns '') if non-hex chars remain.
@@ -90,6 +91,9 @@ export function addLogEntry(dir, frame) {
 
   // Buffer for next render tick
   state.pendingRender.push(entry);
+
+  // Feed the sniffer aggregate
+  ingestFrame(dir, frame);
 }
 
 export function addSystemLog(msg) {
@@ -125,6 +129,25 @@ export function renderTick() {
       if (state.pauseBuffer.length > 10000) state.pauseBuffer = state.pauseBuffer.slice(-10000);
       document.getElementById('pauseBtn').textContent = `Resume (${state.pauseBuffer.length})`;
     }
+    return;
+  }
+
+  // Sniffer view: update the rolled-up table and skip the log DOM path.
+  // pendingRender is dropped here — state.logEntries is the source of truth
+  // and is replayed via rebuildLog() when the user switches back.
+  if (state.currentView === 'sniff') {
+    state.pendingRender = [];
+    const filterInput = getIdFilter();
+    const udsIds = state.currentFilter === 'uds' ? getUdsIdSet() : null;
+    renderSniffer((idStr, dir) => {
+      if (state.currentFilter === 'rx' || state.currentFilter === 'tx') {
+        if (dir !== state.currentFilter) return false;
+      } else if (state.currentFilter === 'uds') {
+        if (!udsIds.has(idStr)) return false;
+      }
+      if (filterInput && !idStr.includes(filterInput)) return false;
+      return true;
+    });
     return;
   }
 
@@ -262,7 +285,25 @@ export function clearLog() {
   document.getElementById('rxCount').textContent = '0';
   document.getElementById('txCount').textContent = '0';
   document.getElementById('errCount').textContent = '0';
+  clearSniffer();
   rebuildLog();
+}
+
+export function setView(view) {
+  state.currentView = view;
+  const logScroll = document.getElementById('logScroll');
+  const snifferScroll = document.getElementById('snifferScroll');
+  const btn = document.getElementById('viewToggleBtn');
+  const isSniff = view === 'sniff';
+  logScroll.hidden = isSniff;
+  snifferScroll.hidden = !isSniff;
+  btn.textContent = isSniff ? 'Log View' : 'Sniff View';
+  btn.classList.toggle('active', isSniff);
+  if (!isSniff) rebuildLog();
+}
+
+export function toggleView() {
+  setView(state.currentView === 'sniff' ? 'log' : 'sniff');
 }
 
 export function exportLog() {

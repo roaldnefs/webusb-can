@@ -6,7 +6,7 @@ import { state, RENDER_INTERVAL } from './state.js';
 import { handleConnect } from './connection.js';
 import { handleSend, toggleRepeat, stopRepeat } from './send.js';
 import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals } from './signals.js';
-import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog } from './ui.js';
+import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView } from './ui.js';
 import { udsRequest } from './uds.js';
 
 // ─── Expose functions on window for inline onclick handlers ───
@@ -22,6 +22,7 @@ window.clearLog = clearLog;
 window.exportLog = exportLog;
 window.handleUdsSend = handleUdsSend;
 window.toggleTheme = toggleTheme;
+window.toggleView = toggleView;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)
 window.state = state;

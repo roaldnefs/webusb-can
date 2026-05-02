@@ -212,25 +212,30 @@ body::before {
 
 /* Shared thin scrollbar — applies to every scrollable region in the app. */
 .sidebar,
-.log-scroll {
+.log-scroll,
+.sniffer-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
 
 .sidebar::-webkit-scrollbar,
-.log-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.log-scroll::-webkit-scrollbar,
+.sniffer-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 
 .sidebar::-webkit-scrollbar-track,
-.log-scroll::-webkit-scrollbar-track { background: transparent; }
+.log-scroll::-webkit-scrollbar-track,
+.sniffer-scroll::-webkit-scrollbar-track { background: transparent; }
 
 .sidebar::-webkit-scrollbar-thumb,
-.log-scroll::-webkit-scrollbar-thumb {
+.log-scroll::-webkit-scrollbar-thumb,
+.sniffer-scroll::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 3px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover,
-.log-scroll::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+.log-scroll::-webkit-scrollbar-thumb:hover,
+.sniffer-scroll::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
 
 .panel-title {
   font-family: 'JetBrains Mono', monospace;
@@ -426,6 +431,62 @@ select option { background: var(--bg-secondary); }
   overflow-y: auto;
   padding: 8px 0;
   scroll-behavior: smooth;
+}
+
+.sniffer-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.sniff-row {
+  display: grid;
+  grid-template-columns: 80px 80px 70px 50px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  border-bottom: 1px solid var(--log-row-border);
+}
+
+.sniff-row:hover { background: rgba(59, 130, 246, 0.04); }
+
+.sniff-header {
+  position: sticky;
+  top: 0;
+  background: var(--surface-translucent-2);
+  backdrop-filter: blur(8px);
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.sniff-id { color: var(--accent-cyan); font-weight: 600; }
+.sniff-cycle { color: var(--text-secondary); text-align: right; }
+.sniff-count { color: var(--text-muted); text-align: right; }
+.sniff-dlc { color: var(--text-muted); text-align: right; font-size: 11px; }
+.sniff-data { display: flex; gap: 4px; flex-wrap: wrap; color: var(--text-primary); }
+
+.sniff-byte {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  padding: 1px 3px;
+  border-radius: 3px;
+  transition: background 0.2s ease-out, color 0.2s ease-out;
+}
+
+.sniff-header .sniff-id,
+.sniff-header .sniff-cycle,
+.sniff-header .sniff-count,
+.sniff-header .sniff-dlc,
+.sniff-header .sniff-data {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .log-entry {

@@ -185,6 +185,7 @@
           <span class="stat-value" id="errCount">0</span>
         </div>
         <div style="flex:1"></div>
+        <button id="viewToggleBtn" class="btn btn-sm" onclick="toggleView()">Sniff View</button>
         <button id="pauseBtn" class="btn btn-sm" onclick="togglePause()">Pause</button>
         <button class="btn btn-sm" onclick="clearLog()">Clear Log</button>
         <button class="btn btn-sm" onclick="exportLog()">Export CSV</button>
@@ -207,6 +208,21 @@
           <div class="empty-icon">&#128268;</div>
           <h3>No CAN messages yet</h3>
           <p>Connect your gs_usb compatible CAN adapter to start capturing CAN bus traffic.</p>
+        </div>
+      </div>
+
+      <!-- Sniffer rolled-up view -->
+      <div class="sniffer-scroll" id="snifferScroll" hidden>
+        <div class="sniff-row sniff-header">
+          <span class="sniff-id">ID</span>
+          <span class="sniff-cycle">Cycle (ms)</span>
+          <span class="sniff-count">Count</span>
+          <span class="sniff-dlc">DLC</span>
+          <span class="sniff-data">Data</span>
+        </div>
+        <div class="empty-state" id="snifferEmpty">
+          <h3>Sniffer is empty</h3>
+          <p>Receive a frame to populate the per-ID table. Bytes that change will flash.</p>
         </div>
       </div>
 

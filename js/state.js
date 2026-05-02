@@ -47,6 +47,7 @@ export const state = {
   errCount: 0,
   logEntries: [],
   currentFilter: 'all',
+  currentView: 'log',
   readLoopRunning: false,
   endpointIn: 1,
   endpointOut: 1,
