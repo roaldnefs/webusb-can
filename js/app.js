@@ -4,10 +4,9 @@
 
 import { state, RENDER_INTERVAL } from './state.js';
 import { handleConnect } from './connection.js';
-import { handleSend, toggleRepeat } from './send.js';
-import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals, stopSignal } from './signals.js';
+import { handleSend, toggleRepeat, stopRepeat } from './send.js';
+import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals } from './signals.js';
 import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog } from './ui.js';
-import { stopRepeat } from './send.js';
 
 // ─── Expose functions on window for inline onclick handlers ───
 window.handleConnect = handleConnect;
