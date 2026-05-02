@@ -21,6 +21,7 @@ window.setFilter = setFilter;
 window.clearLog = clearLog;
 window.exportLog = exportLog;
 window.handleUdsSend = handleUdsSend;
+window.toggleTheme = toggleTheme;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)
 window.state = state;
@@ -113,5 +114,11 @@ async function handleUdsSend() {
   } catch (err) {
     addSystemLog(`UDS error: ${err.message}`);
   }
+}
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('webusb-can-theme', next);
 }
 
