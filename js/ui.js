@@ -45,9 +45,19 @@ function entryMatchesDirFilter(entry, udsIds) {
   }
 }
 
+function copyLogRow(row, entry) {
+  navigator.clipboard?.writeText(entry.data);
+  row.classList.remove('copied');
+  // Force a reflow so re-adding the class restarts the animation.
+  void row.offsetWidth;
+  row.classList.add('copied');
+}
+
 function buildLogRow(entry) {
   const row = document.createElement('div');
   row.className = entry.dir === 'tx' ? 'log-entry tx-row' : 'log-entry';
+  row.title = 'Click to copy data hex';
+  row.addEventListener('click', () => copyLogRow(row, entry));
 
   const time = document.createElement('span');
   time.className = 'log-time';

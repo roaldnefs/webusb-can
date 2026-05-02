@@ -6,6 +6,49 @@ import { state } from './state.js';
 import { buildGsHostFrame, queueTx } from './frames.js';
 import { addSystemLog } from './ui.js';
 
+const STORAGE_KEY = 'webusb-can-signals';
+
+function saveSignals() {
+  try {
+    const data = {
+      signals: state.signals.map(s => ({
+        id: s.id,
+        name: s.name,
+        canId: s.canId,
+        data: s.data,
+        intervalMs: s.intervalMs,
+      })),
+      sigCounter: state.sigCounter,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('Failed to persist signals:', e);
+  }
+}
+
+function loadSignals() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.signals)) return;
+    state.signals = data.signals.map(s => ({
+      id: s.id,
+      name: s.name,
+      canId: s.canId,
+      data: s.data,
+      intervalMs: s.intervalMs,
+      active: false,
+      timer: null,
+    }));
+    if (typeof data.sigCounter === 'number') state.sigCounter = data.sigCounter;
+  } catch (e) {
+    console.warn('Failed to load signals:', e);
+  }
+}
+
+loadSignals();
+
 export function renderSignals() {
   const list = document.getElementById('signalList');
   list.innerHTML = '';
@@ -126,6 +169,7 @@ export function addSignal() {
     active: false,
     timer: null,
   });
+  saveSignals();
 
   // Clear form
   document.getElementById('newSigName').value = '';
@@ -145,6 +189,7 @@ export function removeSignal(sigId) {
   stopSignal(state.signals[idx]);
   const name = state.signals[idx].name;
   state.signals.splice(idx, 1);
+  saveSignals();
   renderSignals();
   addSystemLog(`Signal "${name}" removed.`);
 }
