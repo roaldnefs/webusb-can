@@ -88,6 +88,9 @@ export function updateConnectionUI() {
   const text = document.getElementById('statusText');
   const btn = document.getElementById('connectBtn');
 
+  document.getElementById('bitrateSelect').disabled = state.isConnected;
+  document.getElementById('modeSelect').disabled = state.isConnected;
+
   if (state.isConnected) {
     chip.className = 'status-chip connected';
     text.textContent = 'Connected';
@@ -149,6 +152,9 @@ export function addSystemLog(msg) {
   }
 }
 
+// Rolling 1s sample for the per-second rate display.
+let rateSample = null;
+
 export function renderTick() {
   // Always schedule next tick
   setTimeout(renderTick, RENDER_INTERVAL);
@@ -157,6 +163,21 @@ export function renderTick() {
   document.getElementById('rxCount').textContent = state.rxCount;
   document.getElementById('txCount').textContent = state.txCount;
   document.getElementById('errCount').textContent = state.errCount;
+
+  // Per-second RX/TX rate, refreshed once a second.
+  const nowPerf = performance.now();
+  if (!rateSample) {
+    rateSample = { t: nowPerf, rx: state.rxCount, tx: state.txCount };
+  } else {
+    const dt = (nowPerf - rateSample.t) / 1000;
+    if (dt >= 1) {
+      const rxRate = Math.round((state.rxCount - rateSample.rx) / dt);
+      const txRate = Math.round((state.txCount - rateSample.tx) / dt);
+      document.getElementById('rxRate').textContent = `${rxRate}/s`;
+      document.getElementById('txRate').textContent = `${txRate}/s`;
+      rateSample = { t: nowPerf, rx: state.rxCount, tx: state.txCount };
+    }
+  }
 
   if (state.isPaused) {
     // Buffer entries while paused
@@ -309,6 +330,9 @@ export function clearLog() {
   document.getElementById('rxCount').textContent = '0';
   document.getElementById('txCount').textContent = '0';
   document.getElementById('errCount').textContent = '0';
+  document.getElementById('rxRate').textContent = '0/s';
+  document.getElementById('txRate').textContent = '0/s';
+  rateSample = null;
   clearSniffer();
   rebuildLog();
 }

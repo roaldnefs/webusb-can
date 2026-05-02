@@ -363,6 +363,11 @@ input.invalid, input.invalid:focus {
 select { cursor: pointer; }
 select option { background: var(--bg-secondary); }
 
+select:disabled, input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ─── Top Bar (Stats) ─── */
 .stats-bar {
   display: flex;
@@ -389,6 +394,7 @@ select option { background: var(--bg-secondary); }
 }
 
 .stat-label { color: var(--text-muted); font-size: 11px; }
+.stat-rate { color: var(--text-muted); font-size: 11px; margin-left: 4px; }
 
 /* ─── Message Log ─── */
 .log-area {
