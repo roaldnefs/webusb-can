@@ -164,6 +164,10 @@
           <input type="text" id="udsRequest" placeholder="22 F1 90" value="22 F1 90">
         </div>
         <button class="btn btn-sm" onclick="handleUdsSend()">Send Request</button>
+        <div class="checkbox-row" style="margin-top:10px;">
+          <input type="checkbox" id="udsTesterPresent" onchange="toggleTesterPresent(this)">
+          <label for="udsTesterPresent">Tester Present (3E 00 every 2 s)</label>
+        </div>
       </div>
 
     </aside>
@@ -200,6 +204,15 @@
           <span class="filter-chip" onclick="setFilter('uds', this)">UDS</span>
         </div>
         <input type="text" id="filterInput" placeholder="Filter by ID (hex, e.g. 7DF or 0x123)" style="width:220px; font-size:12px; padding:5px 10px;">
+      </div>
+
+      <!-- Log column header -->
+      <div class="log-entry log-header" id="logHeader">
+        <span class="log-time">Time</span>
+        <span class="log-dir">Dir</span>
+        <span class="log-id">ID</span>
+        <span class="log-data">Data</span>
+        <span class="log-dlc">DLC</span>
       </div>
 
       <!-- Log entries -->

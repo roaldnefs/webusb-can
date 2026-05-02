@@ -541,6 +541,31 @@ select option { background: var(--bg-secondary); }
 .log-entry:hover { background: rgba(59, 130, 246, 0.04); }
 .log-entry.copied { animation: rowFlash 0.6s ease-out; }
 
+.log-header {
+  background: var(--surface-translucent-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  padding: 8px 24px;
+  cursor: default;
+  animation: none;
+}
+
+.log-header:hover { background: var(--surface-translucent-2); }
+
+.log-header[hidden] { display: none; }
+
+.log-header .log-time,
+.log-header .log-dir,
+.log-header .log-id,
+.log-header .log-data,
+.log-header .log-dlc {
+  color: var(--text-muted);
+}
+
 .log-entry.tx-row {
   background: rgba(59, 130, 246, 0.04);
   border-left: 2px solid var(--accent-blue);

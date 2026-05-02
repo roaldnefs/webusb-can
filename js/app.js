@@ -9,6 +9,7 @@ import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals } 
 import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView } from './ui.js';
 import { udsRequest } from './uds.js';
 import { resetIsoTp } from './isotp.js';
+import { startTesterPresent, stopTesterPresent } from './tester-present.js';
 
 // ─── Expose functions on window for inline onclick handlers ───
 window.handleConnect = handleConnect;
@@ -24,6 +25,7 @@ window.exportLog = exportLog;
 window.handleUdsSend = handleUdsSend;
 window.toggleTheme = toggleTheme;
 window.toggleView = toggleView;
+window.toggleTesterPresent = toggleTesterPresent;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)
 window.state = state;
@@ -57,6 +59,7 @@ if (!navigator.usb) {
     if (state.device && event.device === state.device) {
       stopRepeat();
       stopAllSignals();
+      stopTesterPresent();
       resetIsoTp();
       state.isConnected = false;
       state.isStarted = false;
@@ -120,6 +123,14 @@ async function handleUdsSend() {
     }
   } catch (err) {
     addSystemLog(`UDS error: ${err.message}`);
+  }
+}
+
+function toggleTesterPresent(checkbox) {
+  if (checkbox.checked) {
+    if (!startTesterPresent()) checkbox.checked = false;
+  } else {
+    stopTesterPresent();
   }
 }
 

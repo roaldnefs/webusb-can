@@ -9,6 +9,7 @@ import { stopRepeat } from './send.js';
 import { stopAllSignals } from './signals.js';
 import { updateConnectionUI, addSystemLog } from './ui.js';
 import { resetIsoTp } from './isotp.js';
+import { stopTesterPresent } from './tester-present.js';
 
 export async function handleConnect() {
   if (state.isConnected) {
@@ -107,6 +108,7 @@ export async function disconnectDevice() {
     state.isStarted = false;
     stopRepeat();
     stopAllSignals();
+    stopTesterPresent();
     resetIsoTp();
     state.txQueue = [];
     state.readLoopRunning = false;

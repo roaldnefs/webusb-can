@@ -316,10 +316,12 @@ export function clearLog() {
 export function setView(view) {
   state.currentView = view;
   const logScroll = document.getElementById('logScroll');
+  const logHeader = document.getElementById('logHeader');
   const snifferScroll = document.getElementById('snifferScroll');
   const btn = document.getElementById('viewToggleBtn');
   const isSniff = view === 'sniff';
   logScroll.hidden = isSniff;
+  logHeader.hidden = isSniff;
   snifferScroll.hidden = !isSniff;
   btn.textContent = isSniff ? 'Log View' : 'Sniff View';
   btn.classList.toggle('active', isSniff);
