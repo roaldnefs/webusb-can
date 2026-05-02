@@ -4,6 +4,19 @@
 
 import { state, RENDER_INTERVAL, MAX_DOM_ENTRIES, MAX_RENDER_BATCH, MAX_LOG_ENTRIES, LOG_TRIM_BATCH } from './state.js';
 
+// Read & normalize the ID filter input. Strips a leading 0x/0X.
+// Marks the input invalid (and returns '') if non-hex chars remain.
+function getIdFilter() {
+  const el = document.getElementById('filterInput');
+  const raw = el.value.trim().replace(/^0[xX]/, '').toUpperCase();
+  if (raw && !/^[0-9A-F]+$/.test(raw)) {
+    el.classList.add('invalid');
+    return '';
+  }
+  el.classList.remove('invalid');
+  return raw;
+}
+
 export function updateConnectionUI() {
   const chip = document.getElementById('statusChip');
   const text = document.getElementById('statusText');
@@ -94,7 +107,7 @@ export function renderTick() {
   if (entries.length === 0) return;
 
   const scroll = document.getElementById('logScroll');
-  const filterInput = document.getElementById('filterInput').value.trim().toUpperCase();
+  const filterInput = getIdFilter();
   const fragment = document.createDocumentFragment();
   let added = 0;
 
@@ -186,7 +199,7 @@ export function rebuildLog() {
     return;
   }
 
-  const filterInput = document.getElementById('filterInput').value.trim().toUpperCase();
+  const filterInput = getIdFilter();
   const fragment = document.createDocumentFragment();
 
   // Only render the last MAX_DOM_ENTRIES matching entries

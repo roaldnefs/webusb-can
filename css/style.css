@@ -264,6 +264,11 @@ select:focus, input:focus {
   box-shadow: 0 0 0 3px var(--glow-blue);
 }
 
+input.invalid, input.invalid:focus {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 0 3px var(--glow-red);
+}
+
 select { cursor: pointer; }
 select option { background: var(--bg-secondary); }
 
