@@ -72,10 +72,7 @@ function waitForFc(rxId, timeoutMs) {
       fcWaiters.delete(rxId);
       reject(new Error('ISO-TP: FC timeout'));
     }, timeoutMs);
-    fcWaiters.set(rxId, (fc) => {
-      clearTimeout(timer);
-      resolve(fc);
-    });
+    fcWaiters.set(rxId, { resolve, reject, timer });
   });
 }
 
@@ -85,13 +82,30 @@ const rxState = new Map();
 function getRxState(rxId, txId) {
   let s = rxState.get(rxId);
   if (!s) {
-    s = { buffer: null, expected: 0, nextSeq: 1, listeners: new Set(), txId };
+    s = { buffer: null, expected: 0, nextSeq: 1, listeners: new Set(), txId, unhookCan: null };
     rxState.set(rxId, s);
-    onCanFrame(rxId, (data) => handleRxFrame(rxId, data));
+    s.unhookCan = onCanFrame(rxId, (data) => handleRxFrame(rxId, data));
   } else if (txId != null) {
     s.txId = txId;
   }
   return s;
+}
+
+// Reject pending FC waiters, drop reassembly state, and unsubscribe from the
+// reader. Call on disconnect so the next session starts clean.
+export function resetIsoTp() {
+  for (const w of fcWaiters.values()) {
+    clearTimeout(w.timer);
+    w.reject(new Error('ISO-TP: disconnected'));
+  }
+  fcWaiters.clear();
+
+  for (const s of rxState.values()) {
+    if (s.unhookCan) s.unhookCan();
+    s.listeners.clear();
+    s.buffer = null;
+  }
+  rxState.clear();
 }
 
 function handleRxFrame(rxId, data) {
@@ -101,7 +115,8 @@ function handleRxFrame(rxId, data) {
     const w = fcWaiters.get(rxId);
     if (w) {
       fcWaiters.delete(rxId);
-      w({ fs: data[0] & 0x0F, bs: data[1], stmin: data[2] });
+      clearTimeout(w.timer);
+      w.resolve({ fs: data[0] & 0x0F, bs: data[1], stmin: data[2] });
     }
     return;
   }

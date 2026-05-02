@@ -8,6 +8,7 @@ import { handleSend, toggleRepeat, stopRepeat } from './send.js';
 import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals } from './signals.js';
 import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView } from './ui.js';
 import { udsRequest } from './uds.js';
+import { resetIsoTp } from './isotp.js';
 
 // ─── Expose functions on window for inline onclick handlers ───
 window.handleConnect = handleConnect;
@@ -56,6 +57,7 @@ if (!navigator.usb) {
     if (state.device && event.device === state.device) {
       stopRepeat();
       stopAllSignals();
+      resetIsoTp();
       state.isConnected = false;
       state.isStarted = false;
       state.device = null;

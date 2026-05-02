@@ -8,6 +8,7 @@ import { startReading } from './reader.js';
 import { stopRepeat } from './send.js';
 import { stopAllSignals } from './signals.js';
 import { updateConnectionUI, addSystemLog } from './ui.js';
+import { resetIsoTp } from './isotp.js';
 
 export async function handleConnect() {
   if (state.isConnected) {
@@ -106,6 +107,7 @@ export async function disconnectDevice() {
     state.isStarted = false;
     stopRepeat();
     stopAllSignals();
+    resetIsoTp();
     state.txQueue = [];
     state.readLoopRunning = false;
 
