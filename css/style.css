@@ -22,6 +22,8 @@
   --text-muted: #5a6a8a;
   --surface-translucent: rgba(10, 14, 23, 0.85);
   --surface-translucent-2: rgba(17, 24, 39, 0.5);
+  --log-row-border: rgba(30, 45, 74, 0.3);
+  --grid-line: rgba(59, 130, 246, 0.03);
 }
 
 :root[data-theme="light"] {
@@ -36,6 +38,8 @@
   --text-muted: #94a3b8;
   --surface-translucent: rgba(248, 250, 252, 0.85);
   --surface-translucent-2: rgba(241, 245, 249, 0.6);
+  --log-row-border: rgba(148, 163, 184, 0.3);
+  --grid-line: rgba(59, 130, 246, 0.04);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,8 +58,8 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
@@ -432,7 +436,7 @@ select option { background: var(--bg-secondary); }
   padding: 6px 24px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
-  border-bottom: 1px solid rgba(30, 45, 74, 0.3);
+  border-bottom: 1px solid var(--log-row-border);
   transition: background 0.1s;
   animation: fadeIn 0.15s ease;
 }
@@ -488,7 +492,7 @@ select option { background: var(--bg-secondary); }
   font-size: 12px;
   color: var(--accent-amber);
   opacity: 0.8;
-  border-bottom: 1px solid rgba(30, 45, 74, 0.3);
+  border-bottom: 1px solid var(--log-row-border);
 }
 
 /* ─── Send Panel ─── */
