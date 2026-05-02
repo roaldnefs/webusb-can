@@ -5,6 +5,8 @@
 
 const FLASH_MS = 1000;
 const STALE_MS = 5000;
+const DROP_MS = 30000;
+const COPIED_MS = 600;
 
 // Aggregate state per CAN ID.
 const rows = new Map();
@@ -55,9 +57,11 @@ function formatId(row) {
     : row.id.toString(16).toUpperCase().padStart(3, '0');
 }
 
-function createRowElement() {
+function createRowElement(row) {
   const tr = document.createElement('div');
   tr.className = 'sniff-row';
+  tr.title = 'Click to copy hex bytes';
+  tr.addEventListener('click', () => copyRow(tr, row));
 
   const idCell = document.createElement('span');
   idCell.className = 'sniff-id';
@@ -82,8 +86,20 @@ function createRowElement() {
     byteCells.push(b);
   }
 
-  tr.append(idCell, cycleCell, countCell, dlcCell, dataCell);
-  return { tr, idCell, cycleCell, countCell, dlcCell, byteCells };
+  const asciiCell = document.createElement('span');
+  asciiCell.className = 'sniff-ascii';
+
+  tr.append(idCell, cycleCell, countCell, dlcCell, dataCell, asciiCell);
+  return { tr, idCell, cycleCell, countCell, dlcCell, byteCells, asciiCell };
+}
+
+function copyRow(tr, row) {
+  const hex = row.data
+    .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
+    .join(' ');
+  navigator.clipboard?.writeText(hex);
+  tr.classList.add('copied');
+  setTimeout(() => tr.classList.remove('copied'), COPIED_MS);
 }
 
 function updateRowElement(el, row, idStr, now) {
@@ -95,10 +111,13 @@ function updateRowElement(el, row, idStr, now) {
   const stale = now - row.lastSeen > STALE_MS;
   el.tr.classList.toggle('stale', stale);
 
+  let ascii = '';
   for (let i = 0; i < 8; i++) {
     const b = el.byteCells[i];
     if (i < row.data.length) {
-      b.textContent = row.data[i].toString(16).toUpperCase().padStart(2, '0');
+      const v = row.data[i];
+      b.textContent = v.toString(16).toUpperCase().padStart(2, '0');
+      ascii += (v >= 0x20 && v < 0x7F) ? String.fromCharCode(v) : '.';
       const elapsed = now - row.changedAt[i];
       if (elapsed < FLASH_MS) {
         const intensity = 1 - elapsed / FLASH_MS;
@@ -114,6 +133,7 @@ function updateRowElement(el, row, idStr, now) {
       b.style.color = '';
     }
   }
+  el.asciiCell.textContent = ascii;
 }
 
 // Render the visible set of rows. `passes(idStr, dir)` is supplied by ui.js
@@ -122,6 +142,13 @@ export function renderSniffer(passes) {
   const scroll = document.getElementById('snifferScroll');
   const empty = document.getElementById('snifferEmpty');
   const now = performance.now();
+
+  // Drop rows that haven't been seen in a long time. Stale-but-visible rows
+  // are dimmed via the .stale class earlier; once they cross DROP_MS they
+  // disappear. If the same ID returns later, ingestFrame re-creates it.
+  for (const [id, row] of rows) {
+    if (now - row.lastSeen > DROP_MS) rows.delete(id);
+  }
 
   const sortedIds = [...rows.keys()].sort((a, b) => a - b);
   const visible = [];
@@ -145,7 +172,7 @@ export function renderSniffer(passes) {
   for (const { id, row, idStr } of visible) {
     let el = rowEls.get(id);
     if (!el) {
-      el = createRowElement();
+      el = createRowElement(row);
       rowEls.set(id, el);
     }
     updateRowElement(el, row, idStr, now);

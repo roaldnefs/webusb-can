@@ -447,21 +447,27 @@ select option { background: var(--bg-secondary); }
 
 .sniff-row {
   display: grid;
-  grid-template-columns: 80px 80px 70px 50px 1fr;
+  grid-template-columns: 80px 80px 70px 50px 1fr 90px;
   align-items: center;
   gap: 12px;
   padding: 6px 24px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   border-bottom: 1px solid var(--log-row-border);
+  cursor: pointer;
+  transition: background 0.4s ease-out, opacity 0.4s ease-out;
 }
 
 .sniff-row:hover { background: rgba(59, 130, 246, 0.04); }
 
-.sniff-row.stale {
-  opacity: 0.4;
-  transition: opacity 0.4s ease-out;
+.sniff-row.stale { opacity: 0.4; }
+
+.sniff-row.copied {
+  background: rgba(16, 185, 129, 0.18);
+  transition: background 0s;
 }
+
+.sniff-header { cursor: default; }
 
 .sniff-header {
   position: sticky;
@@ -481,6 +487,13 @@ select option { background: var(--bg-secondary); }
 .sniff-count { color: var(--text-muted); text-align: right; }
 .sniff-dlc { color: var(--text-muted); text-align: right; font-size: 11px; }
 .sniff-data { display: flex; gap: 4px; flex-wrap: wrap; color: var(--text-primary); }
+.sniff-ascii {
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 1px;
+  white-space: pre;
+  text-align: right;
+}
 
 .sniff-byte {
   display: inline-block;
@@ -495,7 +508,8 @@ select option { background: var(--bg-secondary); }
 .sniff-header .sniff-cycle,
 .sniff-header .sniff-count,
 .sniff-header .sniff-dlc,
-.sniff-header .sniff-data {
+.sniff-header .sniff-data,
+.sniff-header .sniff-ascii {
   color: var(--text-muted);
   font-weight: 600;
 }
