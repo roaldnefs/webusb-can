@@ -40,13 +40,6 @@ export async function handleSend() {
   });
 }
 
-export function quickSend(id, dataStr) {
-  document.getElementById('sendId').value = id;
-  document.getElementById('sendData').value = dataStr;
-  document.getElementById('sendDlc').value = dataStr.split(/\s+/).length;
-  handleSend();
-}
-
 export function toggleRepeat() {
   if (state.repeatTimer !== null) {
     stopRepeat();

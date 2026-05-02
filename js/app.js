@@ -4,7 +4,7 @@
 
 import { state, RENDER_INTERVAL } from './state.js';
 import { handleConnect } from './connection.js';
-import { handleSend, quickSend, toggleRepeat } from './send.js';
+import { handleSend, toggleRepeat } from './send.js';
 import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals, stopSignal } from './signals.js';
 import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog } from './ui.js';
 import { stopRepeat } from './send.js';
@@ -12,7 +12,6 @@ import { stopRepeat } from './send.js';
 // ─── Expose functions on window for inline onclick handlers ───
 window.handleConnect = handleConnect;
 window.handleSend = handleSend;
-window.quickSend = quickSend;
 window.toggleRepeat = toggleRepeat;
 window.toggleSignal = toggleSignal;
 window.addSignal = addSignal;
