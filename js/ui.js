@@ -2,7 +2,7 @@
 //  UI helpers — log rendering, filters, export, pause
 // ═══════════════════════════════════════════════════════
 
-import { state, RENDER_INTERVAL, MAX_DOM_ENTRIES, MAX_RENDER_BATCH } from './state.js';
+import { state, RENDER_INTERVAL, MAX_DOM_ENTRIES, MAX_RENDER_BATCH, MAX_LOG_ENTRIES, LOG_TRIM_BATCH } from './state.js';
 
 export function updateConnectionUI() {
   const chip = document.getElementById('statusChip');
@@ -43,8 +43,10 @@ export function addLogEntry(dir, frame) {
   const entry = { time, dir, id: idStr, data: dataStr, dlc: frame.dlc };
   state.logEntries.push(entry);
 
-  // Keep max 10000 entries in memory (for export/filter)
-  if (state.logEntries.length > 10000) state.logEntries.shift();
+  // Trim in batches to amortize the O(n) shift cost
+  if (state.logEntries.length > MAX_LOG_ENTRIES + LOG_TRIM_BATCH) {
+    state.logEntries.splice(0, LOG_TRIM_BATCH);
+  }
 
   // Buffer for next render tick
   state.pendingRender.push(entry);
@@ -56,14 +58,7 @@ export function addSystemLog(msg) {
   if (empty) empty.remove();
 
   const div = document.createElement('div');
-  div.style.cssText = `
-    padding: 8px 24px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--accent-amber);
-    opacity: 0.8;
-    border-bottom: 1px solid rgba(30, 45, 74, 0.3);
-  `;
+  div.className = 'log-system';
   div.textContent = `[SYS] ${msg}`;
   scroll.appendChild(div);
 

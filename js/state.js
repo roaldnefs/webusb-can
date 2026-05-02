@@ -34,6 +34,8 @@ export const GS_USB_FILTERS = [
 export const RENDER_INTERVAL = 200;  // ms — render at most 5x per second
 export const MAX_DOM_ENTRIES = 500;   // keep DOM small
 export const MAX_RENDER_BATCH = 100;  // max rows to add per render tick
+export const MAX_LOG_ENTRIES = 10000; // in-memory log cap (for export/filter)
+export const LOG_TRIM_BATCH = 500;    // trim this many at once to amortize shift cost
 
 // App state — all mutable globals in one place
 export const state = {

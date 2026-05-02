@@ -405,6 +405,15 @@ select option { background: var(--bg-secondary); }
   font-size: 11px;
 }
 
+.log-system {
+  padding: 8px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-amber);
+  opacity: 0.8;
+  border-bottom: 1px solid rgba(30, 45, 74, 0.3);
+}
+
 /* ─── Send Panel ─── */
 .send-bar {
   display: flex;
