@@ -284,8 +284,10 @@ body {
 }
 
 .btn-primary:hover {
-  filter: brightness(1.1);
+  background: var(--accent-blue);
   border-color: var(--accent-blue);
+  color: #fff;
+  filter: brightness(1.1);
 }
 
 .btn-danger {
