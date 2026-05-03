@@ -52,7 +52,7 @@ export const state = {
   endpointIn: 1,
   endpointOut: 1,
   claimedInterface: 0,
-  debugMode: true,
+  debugMode: false,
 
   // TX queue
   txQueue: [],
@@ -71,12 +71,14 @@ export const state = {
   simActive: false,
   simTimer: null,
 
-  // Signals
+  // Signals — defaults map to the virtual cluster's protocol so toggling them
+  // immediately drives the simulator (and is also a known-good template when
+  // probing real hardware that follows the same layout).
   signals: [
-    { id: 'sig_1', name: 'Turn Left', canId: 0x470, data: [0x01, 0,0,0,0,0,0,0], intervalMs: 50, active: false, timer: null },
-    { id: 'sig_2', name: 'Turn Right', canId: 0x470, data: [0x02, 0,0,0,0,0,0,0], intervalMs: 50, active: false, timer: null },
-    { id: 'sig_3', name: 'Hazards', canId: 0x470, data: [0x03, 0,0,0,0,0,0,0], intervalMs: 50, active: false, timer: null },
-    { id: 'sig_4', name: 'RPM', canId: 0x280, data: [0x00, 0x00, 0x00, 0x22, 0x00], intervalMs: 50, active: false, timer: null },
+    { id: 'sig_1', name: 'Turn Left',   canId: 0x188, data: [0x01, 0, 0, 0, 0, 0, 0, 0],     intervalMs: 50, active: false, timer: null },
+    { id: 'sig_2', name: 'Turn Right',  canId: 0x188, data: [0x02, 0, 0, 0, 0, 0, 0, 0],     intervalMs: 50, active: false, timer: null },
+    { id: 'sig_3', name: 'Speed 100',   canId: 0x244, data: [0, 0, 0, 0x27, 0x10, 0, 0, 0],  intervalMs: 50, active: false, timer: null },
+    { id: 'sig_4', name: 'Doors open',  canId: 0x19B, data: [0, 0, 0x0F, 0, 0, 0, 0, 0],     intervalMs: 50, active: false, timer: null },
   ],
   sigCounter: 5,
 };

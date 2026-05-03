@@ -16,11 +16,14 @@
 
 import { state } from './state.js';
 import { addLogEntry } from './ui.js';
-import { ingestFrame } from './sniffer.js';
 import { dispatchRx } from './reader.js';
 import { buildGsHostFrame, queueTx } from './frames.js';
 
 const TICK_MS = 50;
+// If no external (queueTx) write for a given axis arrives within this window,
+// the cluster reverts to its default for that axis. Lets the user disable a
+// periodic signal in the sidebar and watch the cluster go back to neutral.
+const STALE_MS = 300;
 
 const ICSIM = {
   SPEED_ID: 0x244,
@@ -36,8 +39,15 @@ const ICSIM = {
 
 const DOOR_KEYS = ['FL', 'FR', 'RL', 'RR']; // mapped 1..1 to bits 0..3
 
-// Live sim state. Mutated by user controls (clicks) AND by incoming frames
-// (so a fuzzed/replayed frame on the bus also moves the cluster).
+// Live sim state. Mutated by user controls (clicks) AND by incoming frames.
+//
+//  - `held.*` is the cluster's own button state. Toggling a cluster button
+//    pins the corresponding axis on; the tick re-asserts it every cycle.
+//  - `signalLeft` / `signalRight` / `doors` are the cluster's *display*
+//    state. Reflects either the held flag or the most recent external
+//    frame; decays when neither source is active for STALE_MS.
+//  - `lastExt.*` is the last time an external frame (onControlFrame) wrote
+//    that axis. Used by the decay check.
 const sim = {
   speedKmh: 0,
   acceleratorPressed: false,
@@ -45,6 +55,12 @@ const sim = {
   signalLeft: false,
   signalRight: false,
   doors: { FL: false, FR: false, RL: false, RR: false },
+  held: {
+    signalLeft: false,
+    signalRight: false,
+    doors: { FL: false, FR: false, RL: false, RR: false },
+  },
+  lastExt: { signal: 0, door: 0, speed: 0 },
 };
 
 // ────────────────────────────────────────────────
@@ -77,15 +93,18 @@ function encodeDoorFrame() {
 }
 
 function decodeAndApply(id, data) {
+  const now = performance.now();
   if (id === ICSIM.SPEED_ID && data.length > ICSIM.SPEED_BYTE + 1) {
     const enc = (data[ICSIM.SPEED_BYTE] << 8) | data[ICSIM.SPEED_BYTE + 1];
     sim.speedKmh = enc / 100;
+    sim.lastExt.speed = now;
     return true;
   }
   if (id === ICSIM.SIGNAL_ID && data.length > ICSIM.SIGNAL_BYTE) {
     const b = data[ICSIM.SIGNAL_BYTE];
     sim.signalLeft = (b & ICSIM.SIGNAL_LEFT) !== 0;
     sim.signalRight = (b & ICSIM.SIGNAL_RIGHT) !== 0;
+    sim.lastExt.signal = now;
     return true;
   }
   if (id === ICSIM.DOOR_ID && data.length > ICSIM.DOOR_BYTE) {
@@ -93,6 +112,7 @@ function decodeAndApply(id, data) {
     for (let i = 0; i < 4; i++) {
       sim.doors[DOOR_KEYS[i]] = (b & ICSIM.DOOR_BITS[i]) !== 0;
     }
+    sim.lastExt.door = now;
     return true;
   }
   return false;
@@ -127,23 +147,45 @@ export function onControlFrame(frame) {
 }
 
 function tick() {
-  // Simple physics: accelerator climbs to 200 km/h, brake or coasting
-  // bleeds it off. Keeps things responsive at 50 ms cadence.
+  const now = performance.now();
+
+  // Speed physics. Accelerator climbs, brake decelerates. When neither is
+  // pressed and no external speed frame has arrived recently, the speed
+  // bleeds back to 0 ("lift off the throttle"). External speed signals
+  // (e.g. a sidebar 0x244 signal) refresh lastExt.speed, which suppresses
+  // the bleed so the bus can pin the needle.
   if (sim.acceleratorPressed) {
-    sim.speedKmh = Math.min(200, sim.speedKmh + 0.8);
+    sim.speedKmh = Math.min(200, sim.speedKmh + 1.5);
   } else if (sim.brakePressed) {
-    sim.speedKmh = Math.max(0, sim.speedKmh - 2.5);
-  } else if (sim.speedKmh > 0) {
-    sim.speedKmh = Math.max(0, sim.speedKmh - 0.15);
+    sim.speedKmh = Math.max(0, sim.speedKmh - 3);
+  } else if (now - sim.lastExt.speed > STALE_MS && sim.speedKmh > 0) {
+    sim.speedKmh = Math.max(0, sim.speedKmh - 0.6);
   }
 
+  // Decay externally-driven booleans when their last external write went
+  // stale and the user hasn't pinned them via a cluster button.
+  if (now - sim.lastExt.signal > STALE_MS) {
+    if (!sim.held.signalLeft) sim.signalLeft = false;
+    if (!sim.held.signalRight) sim.signalRight = false;
+  }
+  if (now - sim.lastExt.door > STALE_MS) {
+    for (const k of DOOR_KEYS) {
+      if (!sim.held.doors[k]) sim.doors[k] = false;
+    }
+  }
+
+  // Re-assert held flags so a toggled cluster button stays on regardless
+  // of whether external frames keep arriving.
+  if (sim.held.signalLeft)  sim.signalLeft = true;
+  if (sim.held.signalRight) sim.signalRight = true;
+  for (const k of DOOR_KEYS) {
+    if (sim.held.doors[k]) sim.doors[k] = true;
+  }
+
+  // emitRx already pushes through addLogEntry, which feeds the sniffer.
   emitRx(encodeSpeedFrame());
   emitRx(encodeSignalFrame());
   emitRx(encodeDoorFrame());
-
-  ingestFrame('rx', encodeSpeedFrame());
-  ingestFrame('rx', encodeSignalFrame());
-  ingestFrame('rx', encodeDoorFrame());
 
   renderCluster();
 }
@@ -161,9 +203,18 @@ export function stopSim() {
     state.simTimer = null;
   }
   state.simActive = false;
-  // Reset transient pressed states so a re-start doesn't accelerate forever.
+  // Reset transient state so a re-start is clean.
   sim.acceleratorPressed = false;
   sim.brakePressed = false;
+  sim.signalLeft = false;
+  sim.signalRight = false;
+  for (const k of DOOR_KEYS) sim.doors[k] = false;
+  sim.held.signalLeft = false;
+  sim.held.signalRight = false;
+  for (const k of DOOR_KEYS) sim.held.doors[k] = false;
+  sim.lastExt.signal = 0;
+  sim.lastExt.door = 0;
+  sim.lastExt.speed = 0;
 }
 
 // ────────────────────────────────────────────────
@@ -223,19 +274,24 @@ export function pressBrake(on) {
 }
 
 export function toggleSignalLeft() {
-  sim.signalLeft = !sim.signalLeft;
-  if (sim.signalLeft) sim.signalRight = false;
+  sim.held.signalLeft = !sim.held.signalLeft;
+  if (sim.held.signalLeft) sim.held.signalRight = false;
+  sim.signalLeft = sim.held.signalLeft;
+  if (sim.held.signalLeft) sim.signalRight = false;
   sendFrame(encodeSignalFrame());
 }
 
 export function toggleSignalRight() {
-  sim.signalRight = !sim.signalRight;
-  if (sim.signalRight) sim.signalLeft = false;
+  sim.held.signalRight = !sim.held.signalRight;
+  if (sim.held.signalRight) sim.held.signalLeft = false;
+  sim.signalRight = sim.held.signalRight;
+  if (sim.held.signalRight) sim.signalLeft = false;
   sendFrame(encodeSignalFrame());
 }
 
 export function toggleDoor(key) {
   if (!(key in sim.doors)) return;
-  sim.doors[key] = !sim.doors[key];
+  sim.held.doors[key] = !sim.held.doors[key];
+  sim.doors[key] = sim.held.doors[key];
   sendFrame(encodeDoorFrame());
 }
