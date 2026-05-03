@@ -75,6 +75,9 @@
         <button id="connectBtn" class="btn btn-primary" onclick="handleConnect()">
           &#9654; Connect Device
         </button>
+        <button id="simBtn" class="btn btn-sm" onclick="startSimulator()" style="margin-top:8px;" title="Run an in-browser CAN bus simulator (no device needed)">
+          Start Simulator
+        </button>
       </div>
 
       <div class="card">
@@ -239,6 +242,65 @@
         <div class="empty-state" id="snifferEmpty">
           <h3>Sniffer is empty</h3>
           <p>Receive a frame to populate the per-ID table. Bytes that change will flash.</p>
+        </div>
+      </div>
+
+      <!-- Cluster simulator view -->
+      <div class="cluster-area" id="clusterArea" hidden>
+        <div class="cluster-header">
+          <span>Virtual cluster</span>
+          <span class="cluster-header-actions">
+            <button class="cluster-iconbtn" aria-label="Minimize" title="Minimize" onclick="toggleClusterMinimize()">&#8722;</button>
+            <button class="cluster-iconbtn" aria-label="Stop simulator" title="Stop simulator" onclick="stopSimulator()">&times;</button>
+          </span>
+        </div>
+        <div class="cluster-stage">
+          <svg class="cluster-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="90" class="gauge-face"/>
+            <circle cx="100" cy="100" r="90" class="gauge-ring"/>
+            <g class="gauge-ticks">
+              <!-- Ticks at -120 to +120 deg, one per 20 km/h. -->
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-120 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-96 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-72 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-48 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-24 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(0 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(24 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(48 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(72 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(96 100 100)"/>
+              <line x1="100" y1="20" x2="100" y2="32" transform="rotate(120 100 100)"/>
+            </g>
+            <line id="clusterSpeedNeedle" class="gauge-needle" x1="100" y1="100" x2="100" y2="35" transform="rotate(-120 100 100)"/>
+            <circle cx="100" cy="100" r="6" class="gauge-hub"/>
+            <text id="clusterSpeed" x="100" y="150" text-anchor="middle" class="gauge-value">0</text>
+            <text x="100" y="170" text-anchor="middle" class="gauge-unit">km/h</text>
+          </svg>
+
+          <div class="cluster-side">
+            <div class="cluster-signals">
+              <div class="signal-light" id="clusterSignalLeft" title="Left turn signal">&#9664;</div>
+              <div class="signal-light" id="clusterSignalRight" title="Right turn signal">&#9654;</div>
+            </div>
+            <div class="cluster-doors" title="Door indicators (filled = open / unlocked)">
+              <div class="door-indicator" id="clusterDoorFL">FL</div>
+              <div class="door-indicator" id="clusterDoorFR">FR</div>
+              <div class="door-indicator" id="clusterDoorRL">RL</div>
+              <div class="door-indicator" id="clusterDoorRR">RR</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cluster-controls">
+          <button class="btn btn-sm" onmousedown="simAccel(true)" onmouseup="simAccel(false)" onmouseleave="simAccel(false)" ontouchstart="simAccel(true)" ontouchend="simAccel(false)">Accelerator</button>
+          <button class="btn btn-sm" onmousedown="simBrake(true)" onmouseup="simBrake(false)" onmouseleave="simBrake(false)" ontouchstart="simBrake(true)" ontouchend="simBrake(false)">Brake</button>
+          <button class="btn btn-sm" onclick="simSignalLeft()">Left signal</button>
+          <button class="btn btn-sm" onclick="simSignalRight()">Right signal</button>
+          <button class="btn btn-sm" onclick="simDoor('FL')">FL door</button>
+          <button class="btn btn-sm" onclick="simDoor('FR')">FR door</button>
+          <button class="btn btn-sm" onclick="simDoor('RL')">RL door</button>
+          <button class="btn btn-sm" onclick="simDoor('RR')">RR door</button>
         </div>
       </div>
 

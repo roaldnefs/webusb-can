@@ -7,8 +7,8 @@ import { buildGsHostFrame, queueTx } from './frames.js';
 import { addSystemLog } from './ui.js';
 
 export async function handleSend() {
-  if (!state.isConnected || !state.device) {
-    addSystemLog('Not connected. Connect a device first.');
+  if (!state.isConnected) {
+    addSystemLog('Not connected. Connect a device or start the simulator first.');
     return;
   }
 
@@ -49,8 +49,8 @@ export function toggleRepeat() {
 }
 
 export function startRepeat() {
-  if (!state.isConnected || !state.device) {
-    addSystemLog('Not connected. Connect a device first.');
+  if (!state.isConnected) {
+    addSystemLog('Not connected. Connect a device or start the simulator first.');
     return;
   }
 
@@ -96,7 +96,7 @@ export function startRepeat() {
   addSystemLog(`Repeat TX started: ID=0x${idStr}, every ${intervalMs}ms`);
 
   const sendOne = () => {
-    if (!state.isConnected || !state.device || !state.device.opened) {
+    if (!state.isConnected) {
       stopRepeat();
       return;
     }

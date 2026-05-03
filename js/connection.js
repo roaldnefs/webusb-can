@@ -7,16 +7,50 @@ import { gsUsbGetDeviceConfig, configureCAN, startCAN, stopCAN } from './gsusb.j
 import { startReading } from './reader.js';
 import { stopRepeat } from './send.js';
 import { stopAllSignals } from './signals.js';
-import { updateConnectionUI, addSystemLog } from './ui.js';
+import { updateConnectionUI, addSystemLog, setClusterVisible } from './ui.js';
 import { resetIsoTp } from './isotp.js';
+import { startSim, stopSim } from './icsim.js';
 import { stopTesterPresent } from './tester-present.js';
 
 export async function handleConnect() {
-  if (state.isConnected) {
+  if (state.simActive) {
+    await stopSimulator();
+  } else if (state.isConnected) {
     await disconnectDevice();
   } else {
     await connectDevice();
   }
+}
+
+// Start the in-browser loopback simulator. No USB, no device. Treats the app
+// as "connected" so signals/repeat/UDS/Send all work against the simulated bus.
+export async function startSimulator() {
+  if (state.isConnected) {
+    addSystemLog('Already connected — disconnect first to start simulator.');
+    return;
+  }
+  state.isConnected = true;
+  startSim();
+  document.getElementById('infoVendor').textContent = 'Simulator';
+  document.getElementById('infoProduct').textContent = 'Virtual CAN bus';
+  document.getElementById('infoVidPid').textContent = '—';
+  document.getElementById('infoChannels').textContent = '1';
+  updateConnectionUI();
+  setClusterVisible(true);
+  addSystemLog('Simulator started — virtual CAN bus active.');
+}
+
+export async function stopSimulator() {
+  if (!state.simActive) return;
+  stopRepeat();
+  stopAllSignals();
+  resetIsoTp();
+  state.txQueue = [];
+  stopSim();
+  state.isConnected = false;
+  setClusterVisible(false);
+  updateConnectionUI();
+  addSystemLog('Simulator stopped.');
 }
 
 export async function connectDevice() {

@@ -93,8 +93,8 @@ export function toggleSignal(sigId) {
 }
 
 export function startSignal(sig) {
-  if (!state.isConnected || !state.device) {
-    addSystemLog('Not connected. Connect a device first.');
+  if (!state.isConnected) {
+    addSystemLog('Not connected. Connect a device or start the simulator first.');
     return;
   }
 
@@ -104,7 +104,7 @@ export function startSignal(sig) {
   const isExtended = canId > 0x7FF;
 
   const sendFrame = () => {
-    if (!state.isConnected || !state.device || !state.device.opened) {
+    if (!state.isConnected) {
       stopSignal(sig);
       renderSignals();
       return;

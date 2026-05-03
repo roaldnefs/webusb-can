@@ -3,13 +3,15 @@
 // ═══════════════════════════════════════════════════════
 
 import { state, RENDER_INTERVAL } from './state.js';
-import { handleConnect } from './connection.js';
+import { handleConnect, startSimulator, stopSimulator } from './connection.js';
 import { handleSend, toggleRepeat, stopRepeat } from './send.js';
 import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals } from './signals.js';
-import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView } from './ui.js';
+import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView, setClusterVisible } from './ui.js';
 import { udsRequest } from './uds.js';
 import { resetIsoTp } from './isotp.js';
 import { startTesterPresent, stopTesterPresent } from './tester-present.js';
+import { onControlFrame as simOnControlFrame, pressAccelerator, pressBrake, toggleSignalLeft, toggleSignalRight, toggleDoor, stopSim } from './icsim.js';
+import { setSimHandler } from './frames.js';
 
 // ─── Expose functions on window for inline onclick handlers ───
 window.handleConnect = handleConnect;
@@ -26,6 +28,14 @@ window.handleUdsSend = handleUdsSend;
 window.toggleTheme = toggleTheme;
 window.toggleView = toggleView;
 window.toggleTesterPresent = toggleTesterPresent;
+window.startSimulator = startSimulator;
+window.stopSimulator = stopSimulator;
+window.simAccel = pressAccelerator;
+window.simBrake = pressBrake;
+window.simSignalLeft = toggleSignalLeft;
+window.simSignalRight = toggleSignalRight;
+window.simDoor = toggleDoor;
+window.toggleClusterMinimize = toggleClusterMinimize;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)
 window.state = state;
@@ -60,6 +70,8 @@ if (!navigator.usb) {
       stopRepeat();
       stopAllSignals();
       stopTesterPresent();
+      stopSim();
+      setClusterVisible(false);
       resetIsoTp();
       state.isConnected = false;
       state.isStarted = false;
@@ -71,6 +83,10 @@ if (!navigator.usb) {
 }
 
 // ─── Init ─────────────────────────────────────────────
+
+// Wire the simulator into the TX queue: when no real device is connected and
+// the sim is running, queueTx hands frames to the sim instead of USB.
+setSimHandler(simOnControlFrame);
 
 // Render initial signals
 renderSignals();
@@ -131,6 +147,19 @@ function toggleTesterPresent(checkbox) {
     if (!startTesterPresent()) checkbox.checked = false;
   } else {
     stopTesterPresent();
+  }
+}
+
+function toggleClusterMinimize() {
+  const el = document.getElementById('clusterArea');
+  if (!el) return;
+  const minimized = el.classList.toggle('minimized');
+  // Swap glyph: minus when expanded, plus when minimized.
+  const btn = el.querySelector('.cluster-header-actions .cluster-iconbtn');
+  if (btn) {
+    btn.innerHTML = minimized ? '&#43;' : '&#8722;';
+    btn.title = minimized ? 'Expand' : 'Minimize';
+    btn.setAttribute('aria-label', minimized ? 'Expand' : 'Minimize');
   }
 }
 

@@ -18,6 +18,17 @@ export function onCanFrame(canId, cb) {
   };
 }
 
+// Deliver an RX frame to every registered onCanFrame listener for this ID.
+// Used by the USB read loop and by the simulator's loopback emit path so
+// both produce identical observable behavior.
+export function dispatchRx(canId, data) {
+  const subs = rxListeners.get(canId);
+  if (!subs || subs.size === 0) return;
+  for (const cb of subs) {
+    try { cb(data); } catch (e) { console.error('RX listener error:', e); }
+  }
+}
+
 export function startReading() {
   if (state.readLoopRunning) return; // prevent duplicate loops
   if (!state.device || !state.device.opened) return;
@@ -81,12 +92,7 @@ export function startReading() {
             isRTR,
           });
 
-          const subs = rxListeners.get(rawId);
-          if (subs && subs.size > 0) {
-            for (const cb of subs) {
-              try { cb(dataBytes); } catch (e) { console.error('RX listener error:', e); }
-            }
-          }
+          dispatchRx(rawId, dataBytes);
 
         } else if (result.status === 'ok' && result.data) {
           if (state.debugMode) {

@@ -78,6 +78,13 @@ export function buildGsHostFrame(canId, data, dlc, extended = false) {
 // WebUSB transferOut is NOT safe to call concurrently.
 // All sends go through this queue to prevent collisions.
 
+// Optional sim consumer. Registered at boot by the simulator module so that
+// when state.simActive && !state.device, frames are routed to the sim's
+// onControlFrame instead of the real USB endpoint. Keeps frames.js free of
+// any circular import on icsim.js.
+let simHandler = null;
+export function setSimHandler(fn) { simHandler = fn; }
+
 export async function queueTx(frameBuf, logFrame) {
   state.txQueue.push({ frameBuf, logFrame });
   if (!state.txBusy) drainTxQueue();
@@ -87,8 +94,29 @@ export async function drainTxQueue() {
   if (state.txBusy) return;
   state.txBusy = true;
 
-  while (state.txQueue.length > 0 && state.isConnected && state.device && state.device.opened) {
+  while (state.txQueue.length > 0 && state.isConnected) {
     const { frameBuf, logFrame } = state.txQueue.shift();
+
+    // Sim loopback: no real device, sim is running. Hand the frame to the
+    // sim and log it as TX without touching USB.
+    if (state.simActive && !state.device) {
+      if (simHandler && logFrame) {
+        try {
+          simHandler({
+            id: logFrame.id,
+            dlc: logFrame.dlc,
+            data: logFrame.data,
+            isExtended: logFrame.isExtended,
+          });
+        } catch (e) { console.error('Sim handler error:', e); }
+      }
+      state.txCount++;
+      if (logFrame) addLogEntry('tx', logFrame);
+      continue;
+    }
+
+    if (!state.device || !state.device.opened) break;
+
     try {
       await state.device.transferOut(state.endpointOut, frameBuf);
       state.txCount++;

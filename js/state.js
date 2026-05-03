@@ -67,6 +67,10 @@ export const state = {
   repeatTimer: null,
   repeatCount: 0,
 
+  // Simulator (in-browser ICSim loopback)
+  simActive: false,
+  simTimer: null,
+
   // Signals
   signals: [
     { id: 'sig_1', name: 'Turn Left', canId: 0x470, data: [0x01, 0,0,0,0,0,0,0], intervalMs: 50, active: false, timer: null },

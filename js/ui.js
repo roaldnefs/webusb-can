@@ -87,20 +87,29 @@ export function updateConnectionUI() {
   const chip = document.getElementById('statusChip');
   const text = document.getElementById('statusText');
   const btn = document.getElementById('connectBtn');
+  const simBtn = document.getElementById('simBtn');
 
   document.getElementById('bitrateSelect').disabled = state.isConnected;
   document.getElementById('modeSelect').disabled = state.isConnected;
 
-  if (state.isConnected) {
+  if (state.simActive) {
+    chip.className = 'status-chip connected';
+    text.textContent = 'Simulator';
+    btn.className = 'btn btn-danger';
+    btn.innerHTML = '&#9632; Stop Simulator';
+    if (simBtn) simBtn.hidden = true;
+  } else if (state.isConnected) {
     chip.className = 'status-chip connected';
     text.textContent = 'Connected';
     btn.className = 'btn btn-danger';
     btn.innerHTML = '&#9632; Disconnect';
+    if (simBtn) simBtn.hidden = true;
   } else {
     chip.className = 'status-chip disconnected';
     text.textContent = 'Disconnected';
     btn.className = 'btn btn-primary';
     btn.innerHTML = '&#9654; Connect Device';
+    if (simBtn) simBtn.hidden = false;
 
     document.getElementById('infoVendor').textContent = '\u2014';
     document.getElementById('infoProduct').textContent = '\u2014';
@@ -354,6 +363,13 @@ export function setView(view) {
 
 export function toggleView() {
   setView(state.currentView === 'sniff' ? 'log' : 'sniff');
+}
+
+export function setClusterVisible(visible) {
+  const el = document.getElementById('clusterArea');
+  if (!el) return;
+  el.hidden = !visible;
+  if (visible) el.classList.remove('minimized');
 }
 
 export function exportLog() {
