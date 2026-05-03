@@ -1039,6 +1039,22 @@ select:disabled, input:disabled {
   width: 0;
 }
 
+.about-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.about-card a {
+  color: var(--accent-blue);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.about-card a:hover { text-decoration: underline; }
+
 /* ─── Unsupported-browser overlay ─── */
 .unsupported-overlay {
   position: fixed;
