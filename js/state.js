@@ -70,6 +70,7 @@ export const state = {
   // Simulator (in-browser ICSim loopback)
   simActive: false,
   simTimer: null,
+  simBogusEnabled: true,
 
   // Signals — defaults map to the virtual cluster's protocol so toggling them
   // immediately drives the simulator (and is also a known-good template when

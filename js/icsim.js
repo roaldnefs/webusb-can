@@ -25,6 +25,12 @@ const TICK_MS = 50;
 // periodic signal in the sidebar and watch the cluster go back to neutral.
 const STALE_MS = 300;
 
+// Bogus / noise traffic — the workshop puzzle is harder when the bus has
+// dozens of unrelated IDs cycling at varying cadences (mirrors ICSim).
+const NOISE_POOL_SIZE = 24;
+const NOISE_INTERVALS = [50, 100, 100, 200, 200, 500, 1000];
+const noisePool = [];
+
 const ICSIM = {
   SPEED_ID: 0x244,
   SPEED_BYTE: 3,
@@ -35,7 +41,14 @@ const ICSIM = {
   DOOR_ID: 0x19B,
   DOOR_BYTE: 2,
   DOOR_BITS: [0x01, 0x02, 0x04, 0x08], // door 1..4
+  RPM_ID: 0x0AA,
+  RPM_BYTE: 4,
+  RPM_SCALE: 32,           // RPM = byte4 * RPM_SCALE  (range 0..8160)
 };
+
+const RPM_IDLE = 800;
+const RPM_PER_KMH = 30;    // top-gear curve: 800 idle, ~6800 at 200 km/h
+const RPM_MAX = 8000;
 
 const DOOR_KEYS = ['FL', 'FR', 'RL', 'RR']; // mapped 1..1 to bits 0..3
 
@@ -50,6 +63,7 @@ const DOOR_KEYS = ['FL', 'FR', 'RL', 'RR']; // mapped 1..1 to bits 0..3
 //    that axis. Used by the decay check.
 const sim = {
   speedKmh: 0,
+  rpm: 0,
   acceleratorPressed: false,
   brakePressed: false,
   signalLeft: false,
@@ -60,7 +74,7 @@ const sim = {
     signalRight: false,
     doors: { FL: false, FR: false, RL: false, RR: false },
   },
-  lastExt: { signal: 0, door: 0, speed: 0 },
+  lastExt: { signal: 0, door: 0, speed: 0, rpm: 0 },
 };
 
 // ────────────────────────────────────────────────
@@ -92,6 +106,12 @@ function encodeDoorFrame() {
   return { id: ICSIM.DOOR_ID, data, dlc: 8, isExtended: false };
 }
 
+function encodeRpmFrame() {
+  const data = [0, 0, 0, 0, 0, 0, 0, 0];
+  data[ICSIM.RPM_BYTE] = Math.max(0, Math.min(0xFF, Math.round(sim.rpm / ICSIM.RPM_SCALE)));
+  return { id: ICSIM.RPM_ID, data, dlc: 8, isExtended: false };
+}
+
 function decodeAndApply(id, data) {
   const now = performance.now();
   if (id === ICSIM.SPEED_ID && data.length > ICSIM.SPEED_BYTE + 1) {
@@ -115,7 +135,45 @@ function decodeAndApply(id, data) {
     sim.lastExt.door = now;
     return true;
   }
+  if (id === ICSIM.RPM_ID && data.length > ICSIM.RPM_BYTE) {
+    sim.rpm = data[ICSIM.RPM_BYTE] * ICSIM.RPM_SCALE;
+    sim.lastExt.rpm = now;
+    return true;
+  }
   return false;
+}
+
+// Build a fresh pool of noise IDs and starting payloads. Called on every
+// startSim so a fresh session has different IDs (attendees can't memorize).
+function generateNoisePool() {
+  noisePool.length = 0;
+  const reserved = new Set([ICSIM.SPEED_ID, ICSIM.SIGNAL_ID, ICSIM.DOOR_ID, ICSIM.RPM_ID]);
+  while (noisePool.length < NOISE_POOL_SIZE) {
+    const id = 0x100 + Math.floor(Math.random() * 0x600);
+    if (reserved.has(id)) continue;
+    reserved.add(id);
+    noisePool.push({
+      id,
+      interval: NOISE_INTERVALS[Math.floor(Math.random() * NOISE_INTERVALS.length)],
+      lastEmit: 0,
+      data: Array.from({ length: 8 }, () => Math.floor(Math.random() * 256)),
+      driftIdx: Math.floor(Math.random() * 8),
+    });
+  }
+}
+
+// Emit any noise frames whose interval has elapsed. A small fraction of the
+// emissions also nudge one byte by ±1 to simulate sensor jitter / counters.
+function emitNoise(now) {
+  if (!state.simBogusEnabled) return;
+  for (const n of noisePool) {
+    if (now - n.lastEmit < n.interval) continue;
+    if (Math.random() < 0.15) {
+      n.data[n.driftIdx] = (n.data[n.driftIdx] + (Math.random() < 0.5 ? -1 : 1)) & 0xFF;
+    }
+    emitRx({ id: n.id, data: n.data.slice(), dlc: 8, isExtended: false });
+    n.lastEmit = now;
+  }
 }
 
 // Inject a frame into the existing RX pipeline (log, sniffer, onCanFrame
@@ -162,6 +220,13 @@ function tick() {
     sim.speedKmh = Math.max(0, sim.speedKmh - 0.6);
   }
 
+  // RPM is derived from speed unless the bus is actively pinning it. Idle
+  // 800 at 0 km/h, ~6800 at 200 km/h — close enough to a real top-gear curve
+  // for a workshop demo without modelling gears.
+  if (now - sim.lastExt.rpm > STALE_MS) {
+    sim.rpm = Math.min(RPM_MAX, RPM_IDLE + sim.speedKmh * RPM_PER_KMH);
+  }
+
   // Decay externally-driven booleans when their last external write went
   // stale and the user hasn't pinned them via a cluster button.
   if (now - sim.lastExt.signal > STALE_MS) {
@@ -182,8 +247,12 @@ function tick() {
     if (sim.held.doors[k]) sim.doors[k] = true;
   }
 
+  // Bogus / noise traffic first so the real frames come through after.
+  emitNoise(now);
+
   // emitRx already pushes through addLogEntry, which feeds the sniffer.
   emitRx(encodeSpeedFrame());
+  emitRx(encodeRpmFrame());
   emitRx(encodeSignalFrame());
   emitRx(encodeDoorFrame());
 
@@ -193,6 +262,7 @@ function tick() {
 export function startSim() {
   if (state.simTimer !== null) return;
   state.simActive = true;
+  generateNoisePool();
   state.simTimer = setInterval(tick, TICK_MS);
   renderCluster();
 }
@@ -215,6 +285,8 @@ export function stopSim() {
   sim.lastExt.signal = 0;
   sim.lastExt.door = 0;
   sim.lastExt.speed = 0;
+  sim.lastExt.rpm = 0;
+  sim.rpm = 0;
 }
 
 // ────────────────────────────────────────────────
@@ -232,6 +304,16 @@ export function renderCluster() {
     // Map 0..200 km/h to -120deg..120deg
     const angle = -120 + (Math.min(200, sim.speedKmh) / 200) * 240;
     needle.setAttribute('transform', `rotate(${angle.toFixed(1)} 100 100)`);
+  }
+
+  const rpmNum = document.getElementById('clusterRpm');
+  if (rpmNum) rpmNum.textContent = Math.round(sim.rpm);
+
+  const rpmNeedle = document.getElementById('clusterRpmNeedle');
+  if (rpmNeedle) {
+    // Map 0..8000 RPM to -120deg..120deg
+    const angle = -120 + (Math.min(RPM_MAX, sim.rpm) / RPM_MAX) * 240;
+    rpmNeedle.setAttribute('transform', `rotate(${angle.toFixed(1)} 100 100)`);
   }
 
   const left = document.getElementById('clusterSignalLeft');
@@ -294,4 +376,8 @@ export function toggleDoor(key) {
   sim.held.doors[key] = !sim.held.doors[key];
   sim.doors[key] = sim.held.doors[key];
   sendFrame(encodeDoorFrame());
+}
+
+export function setBogusEnabled(on) {
+  state.simBogusEnabled = !!on;
 }

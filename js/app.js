@@ -10,7 +10,7 @@ import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, r
 import { udsRequest } from './uds.js';
 import { resetIsoTp } from './isotp.js';
 import { startTesterPresent, stopTesterPresent } from './tester-present.js';
-import { onControlFrame as simOnControlFrame, pressAccelerator, pressBrake, toggleSignalLeft, toggleSignalRight, toggleDoor, stopSim } from './icsim.js';
+import { onControlFrame as simOnControlFrame, pressAccelerator, pressBrake, toggleSignalLeft, toggleSignalRight, toggleDoor, stopSim, setBogusEnabled } from './icsim.js';
 import { setSimHandler } from './frames.js';
 
 // ─── Expose functions on window for inline onclick handlers ───
@@ -35,6 +35,7 @@ window.simBrake = pressBrake;
 window.simSignalLeft = toggleSignalLeft;
 window.simSignalRight = toggleSignalRight;
 window.simDoor = toggleDoor;
+window.setSimBogus = setBogusEnabled;
 window.toggleClusterMinimize = toggleClusterMinimize;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)

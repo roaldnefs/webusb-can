@@ -526,14 +526,20 @@ select:disabled, input:disabled {
 
 .cluster-stage {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 12px;
+}
+
+.cluster-gauges {
+  display: flex;
+  gap: 12px;
   justify-content: center;
-  gap: 16px;
 }
 
 .cluster-svg {
-  width: 200px;
-  height: 200px;
+  width: 170px;
+  height: 170px;
   flex: 0 0 auto;
 }
 
@@ -553,6 +559,11 @@ select:disabled, input:disabled {
 .cluster-svg .gauge-ticks line {
   stroke: var(--text-secondary);
   stroke-width: 2;
+}
+
+.cluster-svg .gauge-ticks line.redline {
+  stroke: var(--accent-red);
+  stroke-width: 3;
 }
 
 .cluster-svg .gauge-needle {
@@ -578,9 +589,11 @@ select:disabled, input:disabled {
 
 .cluster-side {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  flex-direction: row;
+  justify-content: center;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .cluster-signals {
@@ -641,13 +654,32 @@ select:disabled, input:disabled {
 }
 
 .cluster-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 
-.cluster-controls .btn { width: auto; min-width: 0; padding: 5px 10px; font-size: 11px; }
+.cluster-controls .btn {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.cluster-controls .cluster-btn-accel {
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+.cluster-controls .cluster-btn-brake {
+  color: var(--accent-red);
+  border-color: var(--accent-red);
+}
+
+.cluster-controls .cluster-btn-accel:hover,
+.cluster-controls .cluster-btn-brake:hover {
+  background: var(--bg-card-hover);
+}
 
 .sniff-row {
   display: grid;
