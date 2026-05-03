@@ -519,8 +519,7 @@ select:disabled, input:disabled {
   background: var(--bg-card-hover);
 }
 
-.cluster-area.minimized .cluster-stage,
-.cluster-area.minimized .cluster-controls { display: none; }
+.cluster-area.minimized > *:not(.cluster-header) { display: none; }
 
 .cluster-area.minimized .cluster-header { margin-bottom: -14px; border-bottom-color: transparent; }
 
