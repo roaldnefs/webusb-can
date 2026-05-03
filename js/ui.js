@@ -350,12 +350,14 @@ export function setView(view) {
   state.currentView = view;
   const logScroll = document.getElementById('logScroll');
   const logHeader = document.getElementById('logHeader');
+  const sniffHeader = document.getElementById('sniffHeader');
   const snifferScroll = document.getElementById('snifferScroll');
   const btn = document.getElementById('viewToggleBtn');
   const isSniff = view === 'sniff';
   logScroll.hidden = isSniff;
   logHeader.hidden = isSniff;
   snifferScroll.hidden = !isSniff;
+  if (sniffHeader) sniffHeader.hidden = !isSniff;
   btn.textContent = isSniff ? 'Log View' : 'Sniff View';
   btn.classList.toggle('active', isSniff);
   if (!isSniff) rebuildLog();

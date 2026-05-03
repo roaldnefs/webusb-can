@@ -671,9 +671,10 @@ select:disabled, input:disabled {
   transition: background 0s;
 }
 
-.sniff-header {
-  position: sticky;
-  top: 0;
+/* Two-class selectors so this rule wins on specificity over the bare
+   .log-entry / .sniff-row rules regardless of source order. */
+.sniff-row.sniff-header,
+.log-entry.log-header {
   background: var(--surface-translucent-2);
   border-bottom: 1px solid var(--border);
   color: var(--text-muted);
@@ -683,20 +684,41 @@ select:disabled, input:disabled {
   font-weight: 600;
   padding: 8px 16px;
   cursor: default;
-  z-index: 1;
+  animation: none;
 }
 
-.sniff-id { color: var(--accent-cyan); font-weight: 600; }
-.sniff-cycle { color: var(--text-secondary); text-align: right; }
-.sniff-count { color: var(--text-muted); text-align: right; }
-.sniff-dlc { color: var(--text-muted); text-align: right; font-size: 11px; }
-.sniff-data { display: flex; gap: 4px; flex-wrap: wrap; color: var(--text-primary); }
+/* Reset every child cell so each header column renders as plain text in
+   the header's font-size/color/weight, ignoring the visual chrome
+   (chip box on .log-dir, flex/letter-spacing on .sniff-* cells).
+   The double-class selectors lift specificity above .log-id/.sniff-id
+   etc. so the reset wins on ties regardless of source order. */
+.sniff-row.sniff-header > *,
+.log-entry.log-header > * {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  background: transparent;
+  width: auto;
+  height: auto;
+  display: block;
+  border-radius: 0;
+  padding: 0;
+}
+
+.sniff-header[hidden],
+.log-header[hidden] { display: none; }
+
+.sniff-id { color: var(--text-secondary); font-weight: 600; }
+.sniff-cycle { color: var(--text-secondary); }
+.sniff-count { color: var(--text-secondary); }
+.sniff-dlc { color: var(--text-secondary); }
+.sniff-data { display: flex; gap: 4px; flex-wrap: wrap; color: var(--text-secondary); }
 .sniff-ascii {
-  color: var(--text-muted);
-  font-size: 11px;
+  color: var(--text-secondary);
   letter-spacing: 1px;
   white-space: pre;
-  text-align: right;
 }
 
 .sniff-byte {
@@ -706,16 +728,6 @@ select:disabled, input:disabled {
   padding: 1px 3px;
   border-radius: 3px;
   transition: background 0.2s ease-out, color 0.2s ease-out;
-}
-
-.sniff-header .sniff-id,
-.sniff-header .sniff-cycle,
-.sniff-header .sniff-count,
-.sniff-header .sniff-dlc,
-.sniff-header .sniff-data,
-.sniff-header .sniff-ascii {
-  color: var(--text-muted);
-  font-weight: 600;
 }
 
 .log-entry {
@@ -745,37 +757,15 @@ select:disabled, input:disabled {
 .log-entry:hover { background: var(--bg-card-hover); }
 .log-entry.copied { animation: rowFlash 0.6s ease-out; }
 
-.log-header {
-  background: var(--surface-translucent-2);
-  border-bottom: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  padding: 8px 16px;
-  cursor: default;
-  animation: none;
-}
-
-.log-header:hover { background: var(--surface-translucent-2); }
-
-.log-header[hidden] { display: none; }
-
-.log-header .log-time,
-.log-header .log-dir,
-.log-header .log-id,
-.log-header .log-data,
-.log-header .log-dlc {
-  color: var(--text-muted);
-}
+.log-header:hover,
+.sniff-header:hover { background: var(--surface-translucent-2); }
 
 .log-entry.tx-row {
   background: var(--glow-blue);
   border-left: 2px solid var(--accent-blue);
 }
 
-.log-time { color: var(--text-muted); font-size: 11px; }
+.log-time { color: var(--text-secondary); }
 
 .log-dir {
   display: inline-flex;
@@ -798,14 +788,13 @@ select:disabled, input:disabled {
   color: var(--accent-blue);
 }
 
-.log-id { color: var(--accent-cyan); font-weight: 600; }
+.log-id { color: var(--text-secondary); font-weight: 600; }
 
-.log-data { color: var(--text-primary); word-break: break-all; }
+.log-data { color: var(--text-secondary); word-break: break-all; }
 
 .log-dlc {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-align: right;
-  font-size: 11px;
 }
 
 .log-system {
@@ -1125,6 +1114,8 @@ select:disabled, input:disabled {
   text-align: center;
   padding: 40px;
 }
+
+.empty-state[hidden] { display: none; }
 
 .empty-icon {
   width: 64px;

@@ -229,17 +229,20 @@
         </div>
       </div>
 
+      <!-- Sniffer column header -->
+      <div class="sniff-row sniff-header" id="sniffHeader" hidden>
+        <span class="sniff-id">ID</span>
+        <span class="sniff-cycle">Cycle (ms)</span>
+        <span class="sniff-count">Count</span>
+        <span class="sniff-dlc">DLC</span>
+        <span class="sniff-data">Data</span>
+        <span class="sniff-ascii">ASCII</span>
+      </div>
+
       <!-- Sniffer rolled-up view -->
       <div class="sniffer-scroll" id="snifferScroll" hidden>
-        <div class="sniff-row sniff-header">
-          <span class="sniff-id">ID</span>
-          <span class="sniff-cycle">Cycle (ms)</span>
-          <span class="sniff-count">Count</span>
-          <span class="sniff-dlc">DLC</span>
-          <span class="sniff-data">Data</span>
-          <span class="sniff-ascii">ASCII</span>
-        </div>
         <div class="empty-state" id="snifferEmpty">
+          <div class="empty-icon">&#128270;</div>
           <h3>Sniffer is empty</h3>
           <p>Receive a frame to populate the per-ID table. Bytes that change will flash.</p>
         </div>
