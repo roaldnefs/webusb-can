@@ -3,7 +3,24 @@
 // ═══════════════════════════════════════════════════════
 
 import { state } from './state.js';
-import { addLogEntry } from './ui.js';
+import { addLogEntry, addSystemLog } from './ui.js';
+
+// Rate-limit TX-error system logs so a saturated queue doesn't flood
+// the log with one error per failed frame.
+let lastTxErrorLog = 0;
+let suppressedTxErrors = 0;
+
+function reportTxError(msg) {
+  const now = performance.now();
+  if (now - lastTxErrorLog > 1000) {
+    const more = suppressedTxErrors > 0 ? ` (+${suppressedTxErrors} suppressed)` : '';
+    addSystemLog(`${msg}${more}`);
+    lastTxErrorLog = now;
+    suppressedTxErrors = 0;
+  } else {
+    suppressedTxErrors++;
+  }
+}
 
 // gs_host_frame structure (20 bytes):
 //   echo_id:    uint32 (offset 0)
@@ -118,11 +135,21 @@ export async function drainTxQueue() {
     if (!state.device || !state.device.opened) break;
 
     try {
-      await state.device.transferOut(state.endpointOut, frameBuf);
-      state.txCount++;
-      if (logFrame) addLogEntry('tx', logFrame);
+      const result = await state.device.transferOut(state.endpointOut, frameBuf);
+      if (result.status === 'ok') {
+        state.txCount++;
+        if (logFrame) addLogEntry('tx', logFrame);
+      } else if (result.status === 'stall') {
+        // OUT endpoint stalled. Clear the halt and surface it (rate-limited)
+        // so the user knows the device or bus needs intervention.
+        try { await state.device.clearHalt('out', state.endpointOut); } catch (e) { /* */ }
+        reportTxError('OUT endpoint stalled — clearing halt');
+      } else {
+        reportTxError(`TX status: ${result.status}`);
+      }
     } catch (err) {
       console.error('TX queue error:', err);
+      reportTxError(`TX error: ${err.message || err}`);
       // Don't break the queue — skip this frame and continue
     }
   }

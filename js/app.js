@@ -4,6 +4,8 @@
 
 import { state, RENDER_INTERVAL } from './state.js';
 import { handleConnect, startSimulator, stopSimulator } from './connection.js';
+import { startCAN, stopCAN } from './gsusb.js';
+import { startFuzzer, stopFuzzer, isFuzzerActive } from './fuzzer.js';
 import { handleSend, toggleRepeat, stopRepeat } from './send.js';
 import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals } from './signals.js';
 import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView, setClusterVisible } from './ui.js';
@@ -37,6 +39,8 @@ window.simSignalRight = toggleSignalRight;
 window.simDoor = toggleDoor;
 window.setSimBogus = setBogusEnabled;
 window.toggleClusterMinimize = toggleClusterMinimize;
+window.toggleFuzzer = toggleFuzzer;
+window.resetBus = resetBus;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)
 window.state = state;
@@ -71,6 +75,7 @@ if (!navigator.usb) {
       stopRepeat();
       stopAllSignals();
       stopTesterPresent();
+      stopFuzzer();
       stopSim();
       setClusterVisible(false);
       resetIsoTp();
@@ -148,6 +153,79 @@ function toggleTesterPresent(checkbox) {
     if (!startTesterPresent()) checkbox.checked = false;
   } else {
     stopTesterPresent();
+  }
+}
+
+function toggleFuzzer() {
+  if (isFuzzerActive()) {
+    stopFuzzer();
+    return;
+  }
+  const idMode = document.getElementById('fuzzIdMode').value;
+  const dlcMode = document.getElementById('fuzzDlcMode').value;
+  const dataMode = document.getElementById('fuzzDataMode').value;
+  const isExtended = document.getElementById('fuzzExtended').checked;
+
+  const idValue = parseInt(document.getElementById('fuzzIdValue').value.trim().replace(/^0[xX]/, ''), 16);
+  if ((idMode === 'fixed' || idMode === 'increment') && (isNaN(idValue) || idValue < 0)) {
+    addSystemLog('Fuzzer: invalid ID value.');
+    return;
+  }
+  if ((idMode === 'fixed' || idMode === 'increment')) {
+    const max = isExtended ? 0x1FFFFFFF : 0x7FF;
+    if (idValue > max) {
+      addSystemLog(`Fuzzer: ID exceeds ${isExtended ? '29-bit' : '11-bit'} range.`);
+      return;
+    }
+  }
+
+  const dlcValue = parseInt(document.getElementById('fuzzDlcValue').value, 10);
+  if (dlcMode !== 'random' && (isNaN(dlcValue) || dlcValue < 0 || dlcValue > 8)) {
+    addSystemLog('Fuzzer: DLC must be 0-8.');
+    return;
+  }
+
+  const dataValue = parseHexBytes(document.getElementById('fuzzDataValue').value.trim());
+  if ((dataMode === 'fixed' || dataMode === 'increment')) {
+    if (!dataValue.length || dataValue.some(b => isNaN(b) || b < 0 || b > 0xFF)) {
+      addSystemLog('Fuzzer: data bytes invalid for fixed/increment mode.');
+      return;
+    }
+  }
+
+  const gapMs = parseInt(document.getElementById('fuzzGap').value, 10);
+  if (isNaN(gapMs) || gapMs < 0) {
+    addSystemLog('Fuzzer: invalid gap.');
+    return;
+  }
+
+  const target = parseInt(document.getElementById('fuzzMax').value, 10) || 0;
+
+  startFuzzer({
+    idMode, idValue: idValue || 0,
+    dlcMode, dlcValue: dlcValue || 0,
+    dataMode, dataValue,
+    isExtended, gapMs, target,
+  });
+}
+
+async function resetBus() {
+  if (!state.isConnected) {
+    addSystemLog('Reset CAN: not connected.');
+    return;
+  }
+  // Stop in-flight producers so they don't push frames into a half-dead channel
+  stopRepeat();
+  stopAllSignals();
+  stopTesterPresent();
+  stopFuzzer();
+  state.txQueue = [];
+  try {
+    await stopCAN();
+    await startCAN();
+    addSystemLog('CAN channel reset (bus-off cleared).');
+  } catch (err) {
+    addSystemLog(`Reset CAN failed: ${err.message || err}`);
   }
 }
 

@@ -78,6 +78,9 @@
         <button id="simBtn" class="btn btn-sm" onclick="startSimulator()" style="margin-top:8px;" title="Run an in-browser CAN bus simulator (no device needed)">
           Start Simulator
         </button>
+        <button id="resetBusBtn" class="btn btn-sm" onclick="resetBus()" style="margin-top:8px;" title="Recover from bus-off / stuck device">
+          Reset CAN
+        </button>
       </div>
 
       <div class="card">
@@ -170,6 +173,58 @@
         <div class="checkbox-row" style="margin-top:10px;">
           <input type="checkbox" id="udsTesterPresent" onchange="toggleTesterPresent(this)">
           <label for="udsTesterPresent">Tester Present (3E 00 every 2 s)</label>
+        </div>
+      </div>
+
+      <div class="panel-title">Fuzzer</div>
+      <div class="card">
+        <div class="form-group">
+          <label>ID</label>
+          <div class="fuzz-mode-row">
+            <select id="fuzzIdMode">
+              <option value="random" selected>random</option>
+              <option value="increment">increment</option>
+              <option value="fixed">fixed</option>
+            </select>
+            <input type="text" id="fuzzIdValue" placeholder="hex (start/fixed)" value="100">
+          </div>
+          <div class="checkbox-row" style="margin-top:4px;">
+            <input type="checkbox" id="fuzzExtended">
+            <label for="fuzzExtended">29-bit extended</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>DLC</label>
+          <div class="fuzz-mode-row">
+            <select id="fuzzDlcMode">
+              <option value="random">random</option>
+              <option value="increment">increment</option>
+              <option value="fixed" selected>fixed</option>
+            </select>
+            <input type="number" id="fuzzDlcValue" min="0" max="8" value="8">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <div class="fuzz-mode-row">
+            <select id="fuzzDataMode">
+              <option value="random" selected>random</option>
+              <option value="increment">increment</option>
+              <option value="fixed">fixed</option>
+            </select>
+            <input type="text" id="fuzzDataValue" placeholder="hex bytes (start/fixed)">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Gap (ms) / Count</label>
+          <div class="fuzz-mode-row">
+            <input type="number" id="fuzzGap" min="0" max="60000" value="10">
+            <input type="number" id="fuzzMax" min="0" placeholder="0 = unlimited">
+          </div>
+        </div>
+        <button id="fuzzBtn" class="btn btn-sm" onclick="toggleFuzzer()">Start Fuzz</button>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+          Sent: <span id="fuzzSent">0</span>
         </div>
       </div>
 

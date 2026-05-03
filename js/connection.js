@@ -10,6 +10,7 @@ import { stopAllSignals } from './signals.js';
 import { updateConnectionUI, addSystemLog, setClusterVisible } from './ui.js';
 import { resetIsoTp } from './isotp.js';
 import { startSim, stopSim } from './icsim.js';
+import { stopFuzzer } from './fuzzer.js';
 import { stopTesterPresent } from './tester-present.js';
 
 export async function handleConnect() {
@@ -143,6 +144,7 @@ export async function disconnectDevice() {
     stopRepeat();
     stopAllSignals();
     stopTesterPresent();
+    stopFuzzer();
     resetIsoTp();
     state.txQueue = [];
     state.readLoopRunning = false;
