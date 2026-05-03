@@ -42,6 +42,8 @@ window.setSimBogus = setBogusEnabled;
 window.toggleClusterMinimize = toggleClusterMinimize;
 window.toggleFuzzer = toggleFuzzer;
 window.resetBus = resetBus;
+window.showHelp = showHelp;
+window.hideHelp = hideHelp;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)
 window.state = state;
@@ -291,6 +293,22 @@ async function resetBus() {
     addSystemLog(`Reset CAN failed: ${err.message || err}`);
   }
 }
+
+function showHelp() {
+  const el = document.getElementById('helpOverlay');
+  if (el) el.hidden = false;
+}
+
+function hideHelp() {
+  const el = document.getElementById('helpOverlay');
+  if (el) el.hidden = true;
+  try { localStorage.setItem('webusb-can-help-seen', '1'); } catch (e) { /* */ }
+}
+
+// Auto-show the quick-start guide on first visit only.
+try {
+  if (!localStorage.getItem('webusb-can-help-seen')) showHelp();
+} catch (e) { /* */ }
 
 function toggleClusterMinimize() {
   const el = document.getElementById('clusterArea');

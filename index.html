@@ -17,6 +17,60 @@
 </head>
 <body>
 
+<div id="helpOverlay" class="help-overlay" hidden>
+  <div class="help-card">
+    <button class="help-close" aria-label="Close" onclick="hideHelp()">&times;</button>
+    <h2>Quick start</h2>
+
+    <section>
+      <h3>1. Get on a bus</h3>
+      <p>In the <strong>Connection</strong> card on the sidebar, either:</p>
+      <ul>
+        <li><strong>Connect Device</strong> — attach a gs_usb / candleLight / CANable adapter and pick a bitrate.</li>
+        <li><strong>Start Simulator</strong> — run an in-browser virtual cluster. No hardware needed.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>2. Watch traffic</h3>
+      <ul>
+        <li><strong>Log View</strong> — every frame, in arrival order. Click a row to copy its data hex.</li>
+        <li><strong>Sniff View</strong> — one row per CAN ID, with cycle time and bytes that flash amber when they change. Best for finding the ID that drives a behavior.</li>
+        <li>Use the <code>RX</code> / <code>TX</code> / <code>UDS</code> chips and the ID filter to narrow down.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>3. Send frames</h3>
+      <ul>
+        <li>The <strong>Send bar</strong> at the bottom: type a hex ID and data bytes, hit <strong>Send</strong> for one frame or <strong>Repeat</strong> to send periodically.</li>
+        <li><strong>Signals</strong> sidebar card: toggleable pre-configured periodic senders. Pencil to edit, × to remove.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>4. Brute force / fuzz</h3>
+      <p><strong>Fuzzer</strong> sidebar card: cangen-style. Pick <em>random</em>, <em>increment</em>, or <em>fixed</em> for ID, DLC, and Data; set a gap and (optionally) a count, then <strong>Start Fuzz</strong>. Stops when the count is reached or you click again.</p>
+    </section>
+
+    <section>
+      <h3>5. UDS / diagnostics</h3>
+      <p><strong>UDS</strong> sidebar card: TX/RX IDs (default <code>7E0</code>/<code>7E8</code>) and hex request bytes. Built-in ISO-TP transport, NRC name decoding, and a <em>Tester Present</em> auto-repeat checkbox to keep extended sessions alive.</p>
+    </section>
+
+    <section>
+      <h3>6. Drive the simulator</h3>
+      <ul>
+        <li>The <strong>Cluster</strong> overlay floats over the log/sniffer. Drag its title bar to reposition.</li>
+        <li>On-screen <strong>Accel</strong> / <strong>Brake</strong> / <strong>Left signal</strong> / etc. buttons emit real CAN frames into the loopback bus — the cluster reacts the same way it would to any other producer (Send, Repeat, Fuzzer).</li>
+        <li><strong>Bogus traffic</strong> checkbox sprays random IDs to make the puzzle harder. Turn it off for a clean demo.</li>
+      </ul>
+    </section>
+
+    <p class="help-tip">Click the <strong>?</strong> in the header to reopen this guide anytime.</p>
+  </div>
+</div>
+
 <div id="unsupportedOverlay" class="unsupported-overlay" hidden>
   <div class="unsupported-card">
     <button class="unsupported-close" aria-label="Close"
@@ -49,6 +103,13 @@
       <div class="header-title">WebUSB<span>CAN</span></div>
     </div>
     <div class="header-right">
+      <button id="helpBtn" class="icon-btn" aria-label="Help" title="Quick start guide" onclick="showHelp()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
       <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme" onclick="toggleTheme()">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="4"/>
