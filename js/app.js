@@ -7,7 +7,7 @@ import { handleConnect, startSimulator, stopSimulator } from './connection.js';
 import { startCAN, stopCAN } from './gsusb.js';
 import { startFuzzer, stopFuzzer, isFuzzerActive } from './fuzzer.js';
 import { handleSend, toggleRepeat, stopRepeat } from './send.js';
-import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals } from './signals.js';
+import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals, editSignal } from './signals.js';
 import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView, setClusterVisible } from './ui.js';
 import { udsRequest } from './uds.js';
 import { resetIsoTp } from './isotp.js';
@@ -22,6 +22,7 @@ window.toggleRepeat = toggleRepeat;
 window.toggleSignal = toggleSignal;
 window.addSignal = addSignal;
 window.removeSignal = removeSignal;
+window.editSignal = editSignal;
 window.togglePause = togglePause;
 window.setFilter = setFilter;
 window.clearLog = clearLog;
@@ -93,6 +94,68 @@ if (!navigator.usb) {
 // Wire the simulator into the TX queue: when no real device is connected and
 // the sim is running, queueTx hands frames to the sim instead of USB.
 setSimHandler(simOnControlFrame);
+
+// Cluster overlay drag-to-move. Drag handle is the cluster header bar
+// (excluding the icon buttons). Position is persisted to localStorage
+// so the user's chosen spot survives a reload.
+(function setupClusterDrag() {
+  const el = document.getElementById('clusterArea');
+  const handle = el && el.querySelector('.cluster-header');
+  if (!el || !handle) return;
+
+  const STORAGE_KEY = 'webusb-can-cluster-pos';
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const { x, y } = JSON.parse(stored);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+      }
+    }
+  } catch (e) { /* ignore */ }
+
+  let dragging = false;
+  let startX = 0, startY = 0, origLeft = 0, origTop = 0;
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.cluster-iconbtn')) return; // let buttons handle their own clicks
+    const rect = el.getBoundingClientRect();
+    origLeft = rect.left;
+    origTop = rect.top;
+    el.style.left = origLeft + 'px';
+    el.style.top = origTop + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    startX = e.clientX;
+    startY = e.clientY;
+    dragging = true;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const newLeft = origLeft + (e.clientX - startX);
+    const newTop = origTop + (e.clientY - startY);
+    // Clamp so the header stays reachable on screen.
+    const margin = 20;
+    const maxLeft = window.innerWidth - margin;
+    const maxTop = window.innerHeight - margin;
+    el.style.left = Math.max(-(el.offsetWidth - margin), Math.min(maxLeft, newLeft)) + 'px';
+    el.style.top = Math.max(0, Math.min(maxTop, newTop)) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    const rect = el.getBoundingClientRect();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ x: rect.left, y: rect.top }));
+    } catch (e) { /* ignore */ }
+  });
+})();
 
 // Render initial signals
 renderSignals();

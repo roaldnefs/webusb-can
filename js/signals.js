@@ -49,6 +49,25 @@ function loadSignals() {
 
 loadSignals();
 
+// Toggle the Add Signal button text between "+ Add Signal" and "Update Signal"
+// based on whether the current name input matches an existing signal.
+function refreshSignalAddBtn() {
+  const nameEl = document.getElementById('newSigName');
+  const btn = document.getElementById('addSigBtn');
+  if (!nameEl || !btn) return;
+  const name = nameEl.value.trim();
+  const exists = name.length > 0 && state.signals.some(s => s.name === name);
+  btn.textContent = exists ? 'Update Signal' : '+ Add Signal';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const nameEl = document.getElementById('newSigName');
+  if (nameEl) nameEl.addEventListener('input', refreshSignalAddBtn);
+});
+// In case DOMContentLoaded already fired by the time the module runs.
+const _nameEl = document.getElementById('newSigName');
+if (_nameEl) _nameEl.addEventListener('input', refreshSignalAddBtn);
+
 export function renderSignals() {
   const list = document.getElementById('signalList');
   list.innerHTML = '';
@@ -73,10 +92,27 @@ export function renderSignals() {
         <div class="signal-name">${sig.name}</div>
         <div class="signal-detail">0x${idHex} | ${dataHex} | ${sig.intervalMs}ms</div>
       </div>
+      <button class="signal-edit" onclick="editSignal('${sig.id}')" title="Edit (loads into form below)">&#9998;</button>
       <button class="signal-remove" onclick="removeSignal('${sig.id}')" title="Remove">&#10005;</button>
     `;
     list.appendChild(row);
   }
+}
+
+// Populate the Add Signal form with this signal's current values. The user
+// can then tweak and click + Add Signal — addSignal() upserts by name, so
+// the existing entry is overwritten in place rather than duplicated.
+export function editSignal(sigId) {
+  const sig = state.signals.find(s => s.id === sigId);
+  if (!sig) return;
+  const idHex = sig.canId.toString(16).toUpperCase();
+  const dataHex = sig.data.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+  document.getElementById('newSigName').value = sig.name;
+  document.getElementById('newSigId').value = idHex;
+  document.getElementById('newSigData').value = dataHex;
+  document.getElementById('newSigMs').value = String(sig.intervalMs);
+  document.getElementById('newSigName').focus();
+  refreshSignalAddBtn();
 }
 
 export function toggleSignal(sigId) {
@@ -145,7 +181,7 @@ export function stopAllSignals() {
 
 export function addSignal() {
   const name = document.getElementById('newSigName').value.trim() || `Signal ${state.sigCounter}`;
-  const idHex = document.getElementById('newSigId').value.trim();
+  const idHex = document.getElementById('newSigId').value.trim().replace(/^0[xX]/, '');
   const dataStr = document.getElementById('newSigData').value.trim();
   const ms = parseInt(document.getElementById('newSigMs').value) || 50;
 
@@ -160,15 +196,33 @@ export function addSignal() {
     : [];
   while (dataBytes.length < 8) dataBytes.push(0);
 
-  state.signals.push({
-    id: 'sig_' + state.sigCounter++,
-    name: name,
-    canId: canId,
-    data: dataBytes.slice(0, 8),
-    intervalMs: Math.max(1, ms),
-    active: false,
-    timer: null,
-  });
+  const intervalMs = Math.max(1, ms);
+  const data = dataBytes.slice(0, 8);
+
+  // Upsert by name: if a signal with this name already exists, update it
+  // in place (preserving id + active state, restarting the timer if running).
+  const existing = state.signals.find(s => s.name === name);
+  let resultMsg;
+  if (existing) {
+    const wasActive = existing.active;
+    if (wasActive) stopSignal(existing);
+    existing.canId = canId;
+    existing.data = data;
+    existing.intervalMs = intervalMs;
+    if (wasActive) startSignal(existing);
+    resultMsg = `Signal "${name}" updated.`;
+  } else {
+    state.signals.push({
+      id: 'sig_' + state.sigCounter++,
+      name,
+      canId,
+      data,
+      intervalMs,
+      active: false,
+      timer: null,
+    });
+    resultMsg = `Signal "${name}" added.`;
+  }
   saveSignals();
 
   // Clear form
@@ -176,9 +230,10 @@ export function addSignal() {
   document.getElementById('newSigId').value = '';
   document.getElementById('newSigData').value = '';
   document.getElementById('newSigMs').value = '50';
+  refreshSignalAddBtn();
 
   renderSignals();
-  addSystemLog(`Signal "${name}" added.`);
+  addSystemLog(resultMsg);
 }
 
 export function removeSignal(sigId) {

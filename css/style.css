@@ -487,6 +487,8 @@ select:disabled, input:disabled {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   color: var(--text-muted);
+  cursor: move;
+  user-select: none;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -977,7 +979,8 @@ select:disabled, input:disabled {
   margin-top: 1px;
 }
 
-.signal-remove {
+.signal-remove,
+.signal-edit {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -989,8 +992,10 @@ select:disabled, input:disabled {
   transition: opacity 0.15s;
 }
 
-.signal-row:hover .signal-remove { opacity: 1; }
+.signal-row:hover .signal-remove,
+.signal-row:hover .signal-edit { opacity: 1; }
 .signal-remove:hover { color: var(--accent-red); }
+.signal-edit:hover { color: var(--accent-blue); }
 
 .add-signal-form {
   display: flex;
