@@ -253,7 +253,10 @@ function tick() {
   // emitRx already pushes through addLogEntry, which feeds the sniffer.
   emitRx(encodeSpeedFrame());
   emitRx(encodeRpmFrame());
-  emitRx(encodeSignalFrame());
+  // Only broadcast turn-signal frames while a signal is actually on.
+  // Mirrors many real cars where 0x188 is silent at rest, so the
+  // workshop attendee has to provoke a signal to discover the ID.
+  if (sim.signalLeft || sim.signalRight) emitRx(encodeSignalFrame());
   emitRx(encodeDoorFrame());
 
   renderCluster();
