@@ -72,14 +72,12 @@ export const state = {
   simTimer: null,
   simBogusEnabled: true,
 
-  // Signals — defaults map to the virtual cluster's protocol so toggling them
-  // immediately drives the simulator (and is also a known-good template when
-  // probing real hardware that follows the same layout).
+  // Signals — minimal defaults. Turn signals are intentionally NOT seeded
+  // here so attendees still have to discover the 0x188 turn-signal ID as
+  // part of the workshop challenge.
   signals: [
-    { id: 'sig_1', name: 'Turn Left',   canId: 0x188, data: [0x01, 0, 0, 0, 0, 0, 0, 0],     intervalMs: 50, active: false, timer: null },
-    { id: 'sig_2', name: 'Turn Right',  canId: 0x188, data: [0x02, 0, 0, 0, 0, 0, 0, 0],     intervalMs: 50, active: false, timer: null },
-    { id: 'sig_3', name: 'Speed 100',   canId: 0x244, data: [0, 0, 0, 0x27, 0x10, 0, 0, 0],  intervalMs: 50, active: false, timer: null },
-    { id: 'sig_4', name: 'Doors open',  canId: 0x19B, data: [0, 0, 0x0F, 0, 0, 0, 0, 0],     intervalMs: 50, active: false, timer: null },
+    { id: 'sig_1', name: 'Speed 100',   canId: 0x244, data: [0, 0, 0, 0x27, 0x10, 0, 0, 0],  intervalMs: 50, active: false, timer: null },
+    { id: 'sig_2', name: 'Doors open',  canId: 0x19B, data: [0, 0, 0x0F, 0, 0, 0, 0, 0],     intervalMs: 50, active: false, timer: null },
   ],
-  sigCounter: 5,
+  sigCounter: 3,
 };
