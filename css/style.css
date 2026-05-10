@@ -654,6 +654,49 @@ select:disabled, input:disabled {
   background: var(--glow-red);
 }
 
+.cluster-warnings {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.warn-lamp {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  transition: color 0.1s, border-color 0.1s, background 0.1s, box-shadow 0.1s;
+}
+
+.warn-lamp.active {
+  color: var(--accent-amber);
+  border-color: var(--accent-amber);
+  background: var(--glow-blue);
+  box-shadow: 0 0 8px var(--accent-amber);
+}
+
+.cluster-lcd {
+  flex-basis: 100%;
+  height: 26px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #7CFF7C;
+  background: #102010;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
 .cluster-controls {
   display: grid;
   grid-template-columns: 1fr 1fr;

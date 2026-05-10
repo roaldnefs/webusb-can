@@ -44,6 +44,17 @@ const ICSIM = {
   RPM_ID: 0x0AA,
   RPM_BYTE: 4,
   RPM_SCALE: 32,           // RPM = byte4 * RPM_SCALE  (range 0..8160)
+
+  // Car Hacking Village challenges
+  IMMO_ID: 0x3D0,          // immobilizer silence (cyclic all-zero)
+  AIRBAG_ID: 0x050,        // airbag silence (alternate)
+  VIN_ID: 0x65D,           // VIN broadcast (3-frame ASCII split)
+  ABS_ID: 0x4A0,           // ABS wheel speeds (4× big-endian uint16, kmh × 100)
+
+  // Fuzz easter eggs — discoverable via fuzzing one ID at a time.
+  FUZZ_OIL: { id: 0x350, byte: 7, value: 0xFF },
+  FUZZ_LCD: { id: 0x412, byte: 0, value: 0x42 },
+  FUZZ_CE:  { id: 0x4F0, byte: 0, value: 0xA5 },
 };
 
 const RPM_IDLE = 800;
@@ -51,6 +62,13 @@ const RPM_PER_KMH = 30;    // top-gear curve: 800 idle, ~6800 at 200 km/h
 const RPM_MAX = 8000;
 
 const DOOR_KEYS = ['FL', 'FR', 'RL', 'RR']; // mapped 1..1 to bits 0..3
+
+const SILENCE_MS = 200;        // max gap where IMMO/AIRBAG silence holds
+const SPEED_TOL_KMH = 10;      // 0x244 vs ABS-avg tolerance (Challenge 07)
+const VIN_INTERVAL_MS = 200;   // total cycle for the 3 VIN chunks
+const EGG_FLASH_MS = 1500;
+const LCD_FLASH_MS = 2000;
+const VIN_STR = 'WVWZZZ1KZAW123456';   // 17 chars, valid VAG-style format
 
 // Live sim state. Mutated by user controls (clicks) AND by incoming frames.
 //
@@ -74,7 +92,14 @@ const sim = {
     signalRight: false,
     doors: { FL: false, FR: false, RL: false, RR: false },
   },
-  lastExt: { signal: 0, door: 0, speed: 0, rpm: 0 },
+  lastExt: { signal: 0, door: 0, speed: 0, rpm: 0, immobilizer: 0, airbag: 0, wheelSpeed: 0 },
+  warn: { immobilizer: true, airbag: true, oilPressure: false, checkEngine: false },
+  lcdText: '',
+  lcdUntil: 0,
+  eggUntil: { oil: 0, ce: 0 },
+  wheelSpeedKmh: 0,
+  vinChunkIdx: 0,
+  lastVinEmit: 0,
 };
 
 // ────────────────────────────────────────────────
@@ -112,6 +137,28 @@ function encodeRpmFrame() {
   return { id: ICSIM.RPM_ID, data, dlc: 8, isExtended: false };
 }
 
+// VIN broadcast — 17 chars across 3 frames. Byte 0 is a sequence index;
+// bytes 1..7 carry up to 7 ASCII chars each.
+function encodeVinFrame(idx) {
+  const data = [idx & 0xFF, 0, 0, 0, 0, 0, 0, 0];
+  const start = idx * 7;
+  for (let i = 0; i < 7; i++) {
+    const ch = VIN_STR.charCodeAt(start + i);
+    data[1 + i] = isNaN(ch) ? 0 : ch & 0xFF;
+  }
+  return { id: ICSIM.VIN_ID, data, dlc: 8, isExtended: false };
+}
+
+// ABS wheel speeds — 4× big-endian uint16, each kmh × 100. The simulator's
+// own broadcast tracks sim.speedKmh, so the cluster's internal speedometer
+// (which gates display on speed-vs-wheel consistency) is self-consistent.
+function encodeAbsFrame() {
+  const enc = Math.max(0, Math.min(0xFFFF, Math.round(sim.speedKmh * 100)));
+  const hi = (enc >> 8) & 0xFF;
+  const lo = enc & 0xFF;
+  return { id: ICSIM.ABS_ID, data: [hi, lo, hi, lo, hi, lo, hi, lo], dlc: 8, isExtended: false };
+}
+
 function decodeAndApply(id, data) {
   const now = performance.now();
   if (id === ICSIM.SPEED_ID && data.length > ICSIM.SPEED_BYTE + 1) {
@@ -140,6 +187,42 @@ function decodeAndApply(id, data) {
     sim.lastExt.rpm = now;
     return true;
   }
+  // Challenge 02 — silence frames must be all-zero, matching the workshop
+  // instruction literally and avoiding accidental silencing by random fuzz.
+  if (id === ICSIM.IMMO_ID && data.every(b => b === 0)) {
+    sim.lastExt.immobilizer = now;
+    return true;
+  }
+  if (id === ICSIM.AIRBAG_ID && data.every(b => b === 0)) {
+    sim.lastExt.airbag = now;
+    return true;
+  }
+  // Challenge 07 — ABS wheel speeds. Average all 4 wheels.
+  if (id === ICSIM.ABS_ID && data.length >= 8) {
+    const w0 = ((data[0] << 8) | data[1]) / 100;
+    const w1 = ((data[2] << 8) | data[3]) / 100;
+    const w2 = ((data[4] << 8) | data[5]) / 100;
+    const w3 = ((data[6] << 8) | data[7]) / 100;
+    sim.wheelSpeedKmh = (w0 + w1 + w2 + w3) / 4;
+    sim.lastExt.wheelSpeed = now;
+    return true;
+  }
+  // Challenge 06 — fuzz easter eggs. Each fires only on a specific (id, byte, value).
+  if (id === ICSIM.FUZZ_OIL.id && data[ICSIM.FUZZ_OIL.byte] === ICSIM.FUZZ_OIL.value) {
+    sim.warn.oilPressure = true;
+    sim.eggUntil.oil = now + EGG_FLASH_MS;
+    return true;
+  }
+  if (id === ICSIM.FUZZ_LCD.id && data[ICSIM.FUZZ_LCD.byte] === ICSIM.FUZZ_LCD.value) {
+    sim.lcdText = 'ECO MODE';
+    sim.lcdUntil = now + LCD_FLASH_MS;
+    return true;
+  }
+  if (id === ICSIM.FUZZ_CE.id && data[ICSIM.FUZZ_CE.byte] === ICSIM.FUZZ_CE.value) {
+    sim.warn.checkEngine = true;
+    sim.eggUntil.ce = now + EGG_FLASH_MS;
+    return true;
+  }
   return false;
 }
 
@@ -147,7 +230,11 @@ function decodeAndApply(id, data) {
 // startSim so a fresh session has different IDs (attendees can't memorize).
 function generateNoisePool() {
   noisePool.length = 0;
-  const reserved = new Set([ICSIM.SPEED_ID, ICSIM.SIGNAL_ID, ICSIM.DOOR_ID, ICSIM.RPM_ID]);
+  const reserved = new Set([
+    ICSIM.SPEED_ID, ICSIM.SIGNAL_ID, ICSIM.DOOR_ID, ICSIM.RPM_ID,
+    ICSIM.IMMO_ID, ICSIM.AIRBAG_ID, ICSIM.VIN_ID, ICSIM.ABS_ID,
+    ICSIM.FUZZ_OIL.id, ICSIM.FUZZ_LCD.id, ICSIM.FUZZ_CE.id,
+  ]);
   while (noisePool.length < NOISE_POOL_SIZE) {
     const id = 0x100 + Math.floor(Math.random() * 0x600);
     if (reserved.has(id)) continue;
@@ -247,17 +334,36 @@ function tick() {
     if (sim.held.doors[k]) sim.doors[k] = true;
   }
 
+  // Warning lamps for Challenge 02 — lit unless silenced recently enough.
+  sim.warn.immobilizer = (now - sim.lastExt.immobilizer) > SILENCE_MS;
+  sim.warn.airbag      = (now - sim.lastExt.airbag)      > SILENCE_MS;
+
+  // Easter-egg flash timeouts (Challenge 06).
+  if (now > sim.eggUntil.oil) sim.warn.oilPressure = false;
+  if (now > sim.eggUntil.ce)  sim.warn.checkEngine = false;
+  if (now > sim.lcdUntil)     sim.lcdText = '';
+
   // Bogus / noise traffic first so the real frames come through after.
   emitNoise(now);
 
   // emitRx already pushes through addLogEntry, which feeds the sniffer.
   emitRx(encodeSpeedFrame());
   emitRx(encodeRpmFrame());
+  emitRx(encodeAbsFrame());
   // Only broadcast turn-signal frames while a signal is actually on.
   // Mirrors many real cars where 0x188 is silent at rest, so the
   // workshop attendee has to provoke a signal to discover the ID.
   if (sim.signalLeft || sim.signalRight) emitRx(encodeSignalFrame());
   emitRx(encodeDoorFrame());
+
+  // VIN broadcast — one of 3 chunks per cycle, paced so each ID re-appears
+  // every VIN_INTERVAL_MS. Plenty of dwell time for a sniffer to spot the
+  // ASCII payload.
+  if (now - sim.lastVinEmit >= VIN_INTERVAL_MS / 3) {
+    emitRx(encodeVinFrame(sim.vinChunkIdx));
+    sim.vinChunkIdx = (sim.vinChunkIdx + 1) % 3;
+    sim.lastVinEmit = now;
+  }
 
   renderCluster();
 }
@@ -289,6 +395,20 @@ export function stopSim() {
   sim.lastExt.door = 0;
   sim.lastExt.speed = 0;
   sim.lastExt.rpm = 0;
+  sim.lastExt.immobilizer = 0;
+  sim.lastExt.airbag = 0;
+  sim.lastExt.wheelSpeed = 0;
+  sim.warn.immobilizer = true;
+  sim.warn.airbag = true;
+  sim.warn.oilPressure = false;
+  sim.warn.checkEngine = false;
+  sim.lcdText = '';
+  sim.lcdUntil = 0;
+  sim.eggUntil.oil = 0;
+  sim.eggUntil.ce = 0;
+  sim.wheelSpeedKmh = 0;
+  sim.vinChunkIdx = 0;
+  sim.lastVinEmit = 0;
   sim.rpm = 0;
 }
 
@@ -300,12 +420,29 @@ export function renderCluster() {
   const speedNum = document.getElementById('clusterSpeed');
   if (!speedNum) return; // panel not in DOM yet (early call)
 
-  speedNum.textContent = Math.round(sim.speedKmh);
+  // Challenge 07 — speedometer trusts the ABS wheel-speed cross-check. When
+  // an external 0x244 has arrived recently, the cluster requires a matching
+  // ABS broadcast within tolerance to display speed. Without external speed
+  // input the existing physics path is unchanged.
+  const now = performance.now();
+  const speedFresh = (now - sim.lastExt.speed) <= STALE_MS;
+  const wheelFresh = (now - sim.lastExt.wheelSpeed) <= STALE_MS;
+  let displaySpeed;
+  if (speedFresh && wheelFresh) {
+    displaySpeed = (Math.abs(sim.speedKmh - sim.wheelSpeedKmh) <= SPEED_TOL_KMH)
+      ? sim.speedKmh : 0;
+  } else if (speedFresh && !wheelFresh) {
+    displaySpeed = 0;
+  } else {
+    displaySpeed = sim.speedKmh;
+  }
+
+  speedNum.textContent = Math.round(displaySpeed);
 
   const needle = document.getElementById('clusterSpeedNeedle');
   if (needle) {
     // Map 0..200 km/h to -120deg..120deg
-    const angle = -120 + (Math.min(200, sim.speedKmh) / 200) * 240;
+    const angle = -120 + (Math.min(200, displaySpeed) / 200) * 240;
     needle.setAttribute('transform', `rotate(${angle.toFixed(1)} 100 100)`);
   }
 
@@ -328,6 +465,18 @@ export function renderCluster() {
     const el = document.getElementById('clusterDoor' + k);
     if (el) el.classList.toggle('open', sim.doors[k]);
   }
+
+  const warnImmo = document.getElementById('warnImmobilizer');
+  const warnAir  = document.getElementById('warnAirbag');
+  const warnOil  = document.getElementById('warnOilPressure');
+  const warnCe   = document.getElementById('warnCheckEngine');
+  if (warnImmo) warnImmo.classList.toggle('active', sim.warn.immobilizer);
+  if (warnAir)  warnAir.classList.toggle('active', sim.warn.airbag);
+  if (warnOil)  warnOil.classList.toggle('active', sim.warn.oilPressure);
+  if (warnCe)   warnCe.classList.toggle('active', sim.warn.checkEngine);
+
+  const lcd = document.getElementById('clusterLcd');
+  if (lcd) lcd.textContent = sim.lcdText;
 }
 
 // ────────────────────────────────────────────────
