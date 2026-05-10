@@ -536,6 +536,7 @@ select:disabled, input:disabled {
   display: flex;
   gap: 12px;
   justify-content: center;
+  align-items: center;
 }
 
 .cluster-svg {
@@ -588,13 +589,12 @@ select:disabled, input:disabled {
   letter-spacing: 1px;
 }
 
-.cluster-side {
+.cluster-center {
   display: flex;
-  flex-direction: row;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 96px;
 }
 
 .cluster-signals {
@@ -655,10 +655,13 @@ select:disabled, input:disabled {
 }
 
 .cluster-warnings {
+  align-self: stretch;
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
   justify-content: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
 }
 
 .warn-lamp {
@@ -681,7 +684,7 @@ select:disabled, input:disabled {
 }
 
 .cluster-lcd {
-  flex-basis: 100%;
+  align-self: stretch;
   height: 26px;
   padding: 0 10px;
   display: flex;

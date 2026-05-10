@@ -391,6 +391,13 @@
           </span>
         </div>
         <div class="cluster-stage">
+          <div class="cluster-warnings">
+            <div class="warn-lamp" id="warnImmobilizer" title="Immobilizer">IMMOBILIZER</div>
+            <div class="warn-lamp" id="warnAirbag"      title="Airbag">AIRBAG</div>
+            <div class="warn-lamp" id="warnOilPressure" title="Oil pressure">OIL PRESSURE</div>
+            <div class="warn-lamp" id="warnCheckEngine" title="Check engine">CHECK MOTOR</div>
+          </div>
+
           <div class="cluster-gauges">
             <svg class="cluster-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
               <circle cx="100" cy="100" r="90" class="gauge-face"/>
@@ -414,6 +421,19 @@
               <text id="clusterRpm" x="100" y="150" text-anchor="middle" class="gauge-value">0</text>
               <text x="100" y="170" text-anchor="middle" class="gauge-unit">rpm</text>
             </svg>
+
+            <div class="cluster-center">
+              <div class="cluster-signals">
+                <div class="signal-light" id="clusterSignalLeft" title="Left turn signal">&#9664;</div>
+                <div class="signal-light" id="clusterSignalRight" title="Right turn signal">&#9654;</div>
+              </div>
+              <div class="cluster-doors" title="Door indicators (filled = open / unlocked)">
+                <div class="door-indicator" id="clusterDoorFL">FL</div>
+                <div class="door-indicator" id="clusterDoorFR">FR</div>
+                <div class="door-indicator" id="clusterDoorRL">RL</div>
+                <div class="door-indicator" id="clusterDoorRR">RR</div>
+              </div>
+            </div>
 
             <svg class="cluster-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
               <circle cx="100" cy="100" r="90" class="gauge-face"/>
@@ -439,25 +459,7 @@
             </svg>
           </div>
 
-          <div class="cluster-side">
-            <div class="cluster-warnings">
-              <div class="warn-lamp" id="warnImmobilizer" title="Immobilizer">IMMOBILIZER</div>
-              <div class="warn-lamp" id="warnAirbag"      title="Airbag">AIRBAG</div>
-              <div class="warn-lamp" id="warnOilPressure" title="Oil pressure">OIL PRESSURE</div>
-              <div class="warn-lamp" id="warnCheckEngine" title="Check engine">CHECK MOTOR</div>
-            </div>
-            <div class="cluster-lcd" id="clusterLcd"></div>
-            <div class="cluster-signals">
-              <div class="signal-light" id="clusterSignalLeft" title="Left turn signal">&#9664;</div>
-              <div class="signal-light" id="clusterSignalRight" title="Right turn signal">&#9654;</div>
-            </div>
-            <div class="cluster-doors" title="Door indicators (filled = open / unlocked)">
-              <div class="door-indicator" id="clusterDoorFL">FL</div>
-              <div class="door-indicator" id="clusterDoorFR">FR</div>
-              <div class="door-indicator" id="clusterDoorRL">RL</div>
-              <div class="door-indicator" id="clusterDoorRR">RR</div>
-            </div>
-          </div>
+          <div class="cluster-lcd" id="clusterLcd"></div>
         </div>
 
         <div class="cluster-controls">
