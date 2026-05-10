@@ -23,7 +23,7 @@ export async function handleSend() {
   }
 
   const dataBytes = dataStr
-    ? dataStr.split(/[\s,]+/).map(b => parseInt(b, 16)).filter(b => !isNaN(b))
+    ? (dataStr.replace(/[\s,]+/g, '').match(/.{1,2}/g) || []).map(b => parseInt(b, 16)).filter(b => !isNaN(b))
     : [];
 
   // Pad to DLC
@@ -72,7 +72,7 @@ export function startRepeat() {
   }
 
   const dataBytes = dataStr
-    ? dataStr.split(/[\s,]+/).map(b => parseInt(b, 16)).filter(b => !isNaN(b))
+    ? (dataStr.replace(/[\s,]+/g, '').match(/.{1,2}/g) || []).map(b => parseInt(b, 16)).filter(b => !isNaN(b))
     : [];
   while (dataBytes.length < dlc) dataBytes.push(0);
 

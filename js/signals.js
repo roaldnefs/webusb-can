@@ -192,7 +192,7 @@ export function addSignal() {
   }
 
   const dataBytes = dataStr
-    ? dataStr.split(/[\s,]+/).map(b => parseInt(b, 16)).filter(b => !isNaN(b))
+    ? (dataStr.replace(/[\s,]+/g, '').match(/.{1,2}/g) || []).map(b => parseInt(b, 16)).filter(b => !isNaN(b))
     : [];
   while (dataBytes.length < 8) dataBytes.push(0);
 

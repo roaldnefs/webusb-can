@@ -168,9 +168,8 @@ setTimeout(renderTick, RENDER_INTERVAL);
 // ─── UDS handlers ─────────────────────────────────────
 
 function parseHexBytes(str) {
-  return str.split(/[\s,]+/)
-    .filter(t => t.length > 0)
-    .map(t => parseInt(t.replace(/^0[xX]/, ''), 16));
+  const cleaned = str.replace(/0[xX]/g, '').replace(/[\s,]+/g, '');
+  return (cleaned.match(/.{1,2}/g) || []).map(b => parseInt(b, 16)).filter(b => !isNaN(b));
 }
 
 function fmtHex(bytes) {
