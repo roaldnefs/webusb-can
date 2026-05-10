@@ -67,6 +67,17 @@
       </ul>
     </section>
 
+    <section>
+      <h3>7. Script from the console</h3>
+      <p>Open DevTools (<kbd>F12</kbd>) and drive everything via <code>window.api</code>:</p>
+      <ul>
+        <li><code>api.send({id: 0x244, data: [0,0,0,0x19,0,0,0,0]})</code> — send one frame.</li>
+        <li><code>const off = api.onAnyFrame(f =&gt; console.log(f.id.toString(16), f.data)); off()</code> — tap RX traffic.</li>
+        <li><code>api.simulator.start(); api.simulator.accel(true)</code> — drive the cluster without buttons.</li>
+      </ul>
+      <p>Full reference: <a href="https://github.com/roaldnefs/webusb-can#console-api" target="_blank" rel="noopener">README → Console API</a>.</p>
+    </section>
+
     <p class="help-tip">Click the <strong>?</strong> in the header to reopen this guide anytime.</p>
   </div>
 </div>

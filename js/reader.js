@@ -8,6 +8,7 @@ import { addLogEntry, addSystemLog } from './ui.js';
 // Fan-out: callbacks registered per CAN ID, fired on every received bus frame
 // (after logging, errors filtered, TX echoes filtered).
 const rxListeners = new Map();
+const anyListeners = new Set();
 
 export function onCanFrame(canId, cb) {
   if (!rxListeners.has(canId)) rxListeners.set(canId, new Set());
@@ -18,14 +19,25 @@ export function onCanFrame(canId, cb) {
   };
 }
 
-// Deliver an RX frame to every registered onCanFrame listener for this ID.
-// Used by the USB read loop and by the simulator's loopback emit path so
-// both produce identical observable behavior.
+export function onAnyFrame(cb) {
+  anyListeners.add(cb);
+  return () => anyListeners.delete(cb);
+}
+
+// Deliver an RX frame to every registered onCanFrame listener for this ID,
+// then to every onAnyFrame wildcard listener. Used by the USB read loop and
+// by the simulator's loopback emit path so both produce identical behavior.
 export function dispatchRx(canId, data) {
   const subs = rxListeners.get(canId);
-  if (!subs || subs.size === 0) return;
-  for (const cb of subs) {
-    try { cb(data); } catch (e) { console.error('RX listener error:', e); }
+  if (subs && subs.size > 0) {
+    for (const cb of subs) {
+      try { cb(data); } catch (e) { console.error('RX listener error:', e); }
+    }
+  }
+  if (anyListeners.size > 0) {
+    for (const cb of anyListeners) {
+      try { cb({ id: canId, data }); } catch (e) { console.error('RX listener error:', e); }
+    }
   }
 }
 

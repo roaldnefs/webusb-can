@@ -179,6 +179,56 @@ export function stopAllSignals() {
   renderSignals();
 }
 
+// Pure version of addSignal — no DOM reads. Same upsert-by-name semantics.
+// Used by addSignal (form path) and window.api.signals.add (console path).
+export function addSignalDirect({ name, canId, data, intervalMs } = {}) {
+  if (typeof canId !== 'number' || !Number.isFinite(canId) || canId < 0) {
+    throw new Error('addSignal: canId must be a non-negative number');
+  }
+  const resolvedName = (typeof name === 'string' && name.trim()) || `Signal ${state.sigCounter}`;
+  const bytes = Array.isArray(data) || ArrayBuffer.isView(data) ? Array.from(data) : [];
+  while (bytes.length < 8) bytes.push(0);
+  const finalData = bytes.slice(0, 8);
+  const finalInterval = Math.max(1, parseInt(intervalMs, 10) || 50);
+
+  const existing = state.signals.find(s => s.name === resolvedName);
+  let stored;
+  let resultMsg;
+  if (existing) {
+    const wasActive = existing.active;
+    if (wasActive) stopSignal(existing);
+    existing.canId = canId;
+    existing.data = finalData;
+    existing.intervalMs = finalInterval;
+    if (wasActive) startSignal(existing);
+    stored = existing;
+    resultMsg = `Signal "${resolvedName}" updated.`;
+  } else {
+    stored = {
+      id: 'sig_' + state.sigCounter++,
+      name: resolvedName,
+      canId,
+      data: finalData,
+      intervalMs: finalInterval,
+      active: false,
+      timer: null,
+    };
+    state.signals.push(stored);
+    resultMsg = `Signal "${resolvedName}" added.`;
+  }
+  saveSignals();
+  renderSignals();
+  addSystemLog(resultMsg);
+  return stored;
+}
+
+export function findSignal(idOrName) {
+  if (idOrName == null) return null;
+  return state.signals.find(s => s.id === idOrName)
+      || state.signals.find(s => s.name === idOrName)
+      || null;
+}
+
 export function addSignal() {
   const name = document.getElementById('newSigName').value.trim() || `Signal ${state.sigCounter}`;
   const idHex = document.getElementById('newSigId').value.trim().replace(/^0[xX]/, '');
@@ -194,46 +244,14 @@ export function addSignal() {
   const dataBytes = dataStr
     ? (dataStr.replace(/[\s,]+/g, '').match(/.{1,2}/g) || []).map(b => parseInt(b, 16)).filter(b => !isNaN(b))
     : [];
-  while (dataBytes.length < 8) dataBytes.push(0);
 
-  const intervalMs = Math.max(1, ms);
-  const data = dataBytes.slice(0, 8);
+  addSignalDirect({ name, canId, data: dataBytes, intervalMs: ms });
 
-  // Upsert by name: if a signal with this name already exists, update it
-  // in place (preserving id + active state, restarting the timer if running).
-  const existing = state.signals.find(s => s.name === name);
-  let resultMsg;
-  if (existing) {
-    const wasActive = existing.active;
-    if (wasActive) stopSignal(existing);
-    existing.canId = canId;
-    existing.data = data;
-    existing.intervalMs = intervalMs;
-    if (wasActive) startSignal(existing);
-    resultMsg = `Signal "${name}" updated.`;
-  } else {
-    state.signals.push({
-      id: 'sig_' + state.sigCounter++,
-      name,
-      canId,
-      data,
-      intervalMs,
-      active: false,
-      timer: null,
-    });
-    resultMsg = `Signal "${name}" added.`;
-  }
-  saveSignals();
-
-  // Clear form
   document.getElementById('newSigName').value = '';
   document.getElementById('newSigId').value = '';
   document.getElementById('newSigData').value = '';
   document.getElementById('newSigMs').value = '50';
   refreshSignalAddBtn();
-
-  renderSignals();
-  addSystemLog(resultMsg);
 }
 
 export function removeSignal(sigId) {

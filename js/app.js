@@ -14,6 +14,7 @@ import { resetIsoTp } from './isotp.js';
 import { startTesterPresent, stopTesterPresent } from './tester-present.js';
 import { onControlFrame as simOnControlFrame, pressAccelerator, pressBrake, toggleSignalLeft, toggleSignalRight, toggleDoor, stopSim, setBogusEnabled } from './icsim.js';
 import { setSimHandler } from './frames.js';
+import { api } from './api.js';
 
 // ─── Expose functions on window for inline onclick handlers ───
 window.handleConnect = handleConnect;
@@ -47,6 +48,9 @@ window.hideHelp = hideHelp;
 
 // Expose state on window for inline onchange handlers (e.g. debugMode checkbox)
 window.state = state;
+
+// Curated console API — see js/api.js. Stable contract for user scripts.
+window.api = api;
 
 // ─── Event listeners ──────────────────────────────────
 
