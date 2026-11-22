@@ -11,6 +11,7 @@ Works with any USB-to-CAN adapter running **gs_usb compatible firmware** (candle
 | Device | VID:PID |
 |--------|---------|
 | candleLight / CANable / CANable 2.0 | `1D50:606F` |
+| CANnectivity | `1209:CA01` |
 
 **Not supported:** Devices using slcan firmware (serial), PCAN-USB, Kvaser, Vector, or other proprietary protocols.
 

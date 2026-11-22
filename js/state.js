@@ -28,6 +28,8 @@ export const GS_CAN_FEATURE = {
 export const GS_USB_FILTERS = [
   // candleLight / CANable / CANable 2.0
   { vendorId: 0x1D50, productId: 0x606F },
+  // CANnectivity firmware
+  { vendorId: 0x1209, productId: 0xCA01 },
 ];
 
 // Render constants
