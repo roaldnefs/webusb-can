@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="WebUSB CAN">
+  <!-- App-icon style: a white glyph on one blue. The glyph is an eye
+       diagram: CAN-H and CAN-L part around the sample point. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a90ff"/>
+      <stop offset="1" stop-color="#1a56e8"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".45"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14.4" fill="url(#tile)"/>
+  <rect x=".6" y=".6" width="62.8" height="62.8" rx="13.8" fill="none" stroke="url(#rim)" stroke-width="1.2"/>
+  <g fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 28.5h9l6.2-11h9.6l6.2 11h9"/>
+    <path d="M12 35.5h9l6.2 11h9.6l6.2-11h9" stroke-opacity=".55"/>
+  </g>
+  <circle cx="32" cy="32" r="3.5" fill="#fff"/>
+</svg>

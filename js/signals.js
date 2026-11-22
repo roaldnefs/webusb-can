@@ -49,7 +49,7 @@ function loadSignals() {
 
 loadSignals();
 
-// Toggle the Add Signal button text between "+ Add Signal" and "Update Signal"
+// Toggle the Add Signal button text between "Add signal" and "Update signal"
 // based on whether the current name input matches an existing signal.
 function refreshSignalAddBtn() {
   const nameEl = document.getElementById('newSigName');
@@ -57,7 +57,7 @@ function refreshSignalAddBtn() {
   if (!nameEl || !btn) return;
   const name = nameEl.value.trim();
   const exists = name.length > 0 && state.signals.some(s => s.name === name);
-  btn.textContent = exists ? 'Update Signal' : '+ Add Signal';
+  btn.textContent = exists ? 'Update signal' : 'Add signal';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -73,7 +73,7 @@ export function renderSignals() {
   list.innerHTML = '';
 
   if (state.signals.length === 0) {
-    list.innerHTML = '<div style="font-size:11px; color:var(--text-muted); padding:4px 0;">No signals configured. Add one below.</div>';
+    list.innerHTML = '<p class="tool-note">No signals yet. Add one below.</p>';
     return;
   }
 
@@ -87,13 +87,14 @@ export function renderSignals() {
     row.className = 'signal-row' + (sig.active ? ' active' : '');
     row.id = 'sigrow_' + sig.id;
     row.innerHTML = `
-      <div class="signal-toggle ${sig.active ? 'on' : ''}" onclick="toggleSignal('${sig.id}')" title="Click to toggle"></div>
+      <button class="signal-toggle ${sig.active ? 'on' : ''}" role="switch" aria-checked="${sig.active}" aria-label="Send ${sig.name}" onclick="toggleSignal('${sig.id}')"></button>
       <div class="signal-info">
         <div class="signal-name">${sig.name}</div>
-        <div class="signal-detail">0x${idHex} | ${dataHex} | ${sig.intervalMs}ms</div>
+        <div class="signal-detail">0x${idHex}, every ${sig.intervalMs} ms</div>
+        <div class="signal-detail">${dataHex}</div>
       </div>
-      <button class="signal-edit" onclick="editSignal('${sig.id}')" title="Edit (loads into form below)">&#9998;</button>
-      <button class="signal-remove" onclick="removeSignal('${sig.id}')" title="Remove">&#10005;</button>
+      <button class="signal-edit" onclick="editSignal('${sig.id}')" aria-label="Edit ${sig.name}" title="Edit (loads into the form below)">Edit</button>
+      <button class="signal-remove" onclick="removeSignal('${sig.id}')" aria-label="Remove ${sig.name}" title="Remove">&times;</button>
     `;
     list.appendChild(row);
   }

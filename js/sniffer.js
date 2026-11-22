@@ -121,16 +121,13 @@ function updateRowElement(el, row, idStr, now) {
       const elapsed = now - row.changedAt[i];
       if (elapsed < FLASH_MS) {
         const intensity = 1 - elapsed / FLASH_MS;
-        b.style.background = `rgba(245, 158, 11, ${(intensity * 0.55).toFixed(3)})`;
-        b.style.color = intensity > 0.5 ? '#000' : '';
+        b.style.background = `rgba(255, 157, 92, ${(intensity * 0.5).toFixed(3)})`;
       } else {
         b.style.background = '';
-        b.style.color = '';
       }
     } else {
       b.textContent = '';
       b.style.background = '';
-      b.style.color = '';
     }
   }
   el.asciiCell.textContent = ascii;

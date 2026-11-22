@@ -88,6 +88,8 @@ export function updateConnectionUI() {
   const text = document.getElementById('statusText');
   const btn = document.getElementById('connectBtn');
   const simBtn = document.getElementById('simBtn');
+  // Resetting the channel only means something on a real adapter.
+  document.getElementById('resetBusBtn').hidden = !state.isConnected || state.simActive;
 
   document.getElementById('bitrateSelect').disabled = state.isConnected;
   document.getElementById('modeSelect').disabled = state.isConnected;
@@ -96,25 +98,25 @@ export function updateConnectionUI() {
     chip.className = 'status-chip connected';
     text.textContent = 'Simulator';
     btn.className = 'btn btn-danger';
-    btn.innerHTML = '&#9632; Stop Simulator';
+    btn.textContent = 'Stop simulator';
     if (simBtn) simBtn.hidden = true;
   } else if (state.isConnected) {
     chip.className = 'status-chip connected';
     text.textContent = 'Connected';
     btn.className = 'btn btn-danger';
-    btn.innerHTML = '&#9632; Disconnect';
+    btn.textContent = 'Disconnect';
     if (simBtn) simBtn.hidden = true;
   } else {
     chip.className = 'status-chip disconnected';
     text.textContent = 'Disconnected';
     btn.className = 'btn btn-primary';
-    btn.innerHTML = '&#9654; Connect Device';
+    btn.textContent = 'Connect device';
     if (simBtn) simBtn.hidden = false;
 
-    document.getElementById('infoVendor').textContent = '\u2014';
-    document.getElementById('infoProduct').textContent = '\u2014';
-    document.getElementById('infoVidPid').textContent = '\u2014';
-    document.getElementById('infoChannels').textContent = '\u2014';
+    document.getElementById('infoVendor').textContent = '-';
+    document.getElementById('infoProduct').textContent = '-';
+    document.getElementById('infoVidPid').textContent = '-';
+    document.getElementById('infoChannels').textContent = '-';
   }
 }
 
@@ -147,6 +149,9 @@ export function addLogEntry(dir, frame) {
 }
 
 export function addSystemLog(msg) {
+  const status = document.getElementById('statusMsg');
+  status.textContent = msg;
+  status.title = msg;
   const scroll = document.getElementById('logScroll');
   const empty = document.getElementById('emptyState');
   if (empty) empty.remove();
@@ -280,7 +285,7 @@ export function togglePause() {
       const tail = state.pauseBuffer.slice(-MAX_RENDER_BATCH);
       state.pendingRender.push(...tail);
       if (state.pauseBuffer.length > MAX_RENDER_BATCH) {
-        addSystemLog(`Resumed \u2014 showing last ${MAX_RENDER_BATCH} of ${state.pauseBuffer.length} buffered frames.`);
+        addSystemLog(`Resumed, showing last ${MAX_RENDER_BATCH} of ${state.pauseBuffer.length} buffered frames.`);
       }
       state.pauseBuffer = [];
     }
@@ -301,9 +306,10 @@ export function rebuildLog() {
   if (state.logEntries.length === 0) {
     scroll.innerHTML = `
       <div class="empty-state" id="emptyState">
-        <div class="empty-icon">&#128268;</div>
-        <h3>No CAN messages yet</h3>
-        <p>Connect your gs_usb compatible CAN adapter to start capturing CAN bus traffic.</p>
+        <h3>No frames yet</h3>
+        <p>${state.isConnected
+          ? 'Waiting for traffic on the bus.'
+          : 'Connect a gs_usb compatible CAN adapter, or start the simulator to try everything without hardware.'}</p>
       </div>`;
     return;
   }
@@ -352,19 +358,14 @@ export function setView(view) {
   const logHeader = document.getElementById('logHeader');
   const sniffHeader = document.getElementById('sniffHeader');
   const snifferScroll = document.getElementById('snifferScroll');
-  const btn = document.getElementById('viewToggleBtn');
   const isSniff = view === 'sniff';
   logScroll.hidden = isSniff;
   logHeader.hidden = isSniff;
   snifferScroll.hidden = !isSniff;
   if (sniffHeader) sniffHeader.hidden = !isSniff;
-  btn.textContent = isSniff ? 'Log View' : 'Sniff View';
-  btn.classList.toggle('active', isSniff);
+  document.getElementById('viewLogBtn').setAttribute('aria-pressed', String(!isSniff));
+  document.getElementById('viewSniffBtn').setAttribute('aria-pressed', String(isSniff));
   if (!isSniff) rebuildLog();
-}
-
-export function toggleView() {
-  setView(state.currentView === 'sniff' ? 'log' : 'sniff');
 }
 
 export function setClusterVisible(visible) {
@@ -372,6 +373,10 @@ export function setClusterVisible(visible) {
   if (!el) return;
   el.hidden = !visible;
   if (visible) el.classList.remove('minimized');
+  // Phones show one pane at a time: bring the car up when it starts, and
+  // fall back to the traffic when it goes away.
+  if (visible) document.body.dataset.pane = 'car';
+  else if (document.body.dataset.pane === 'car') document.body.dataset.pane = 'traffic';
 }
 
 export function exportLog() {

@@ -114,7 +114,7 @@ export function startReading() {
           }
           consecutiveErrors = 0;
         } else if (result.status === 'stall') {
-          addSystemLog('Endpoint stalled \u2014 clearing halt.');
+          addSystemLog('Endpoint stalled, clearing halt.');
           await state.device.clearHalt('in', state.endpointIn);
           consecutiveErrors = 0;
         } else if (result.status === 'babble') {
@@ -137,7 +137,7 @@ export function startReading() {
 
     // Auto-restart if still connected (loop exited unexpectedly)
     if (state.isConnected && state.device && state.device.opened) {
-      addSystemLog('Read loop exited \u2014 restarting...');
+      addSystemLog('Read loop exited, restarting...');
       await new Promise(r => setTimeout(r, 200));
       if (state.isConnected && state.device && state.device.opened) {
         state.readLoopRunning = true;

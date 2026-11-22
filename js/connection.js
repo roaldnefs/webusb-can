@@ -27,18 +27,18 @@ export async function handleConnect() {
 // as "connected" so signals/repeat/UDS/Send all work against the simulated bus.
 export async function startSimulator() {
   if (state.isConnected) {
-    addSystemLog('Already connected — disconnect first to start simulator.');
+    addSystemLog('Already connected. Disconnect first to start simulator.');
     return;
   }
   state.isConnected = true;
   startSim();
   document.getElementById('infoVendor').textContent = 'Simulator';
   document.getElementById('infoProduct').textContent = 'Virtual CAN bus';
-  document.getElementById('infoVidPid').textContent = '—';
+  document.getElementById('infoVidPid').textContent = '-';
   document.getElementById('infoChannels').textContent = '1';
   updateConnectionUI();
   setClusterVisible(true);
-  addSystemLog('Simulator started — virtual CAN bus active.');
+  addSystemLog('Simulator started. Virtual CAN bus active.');
 }
 
 export async function stopSimulator() {
@@ -115,7 +115,7 @@ export async function connectDevice() {
     const numChannels = configData ? configData.icount + 1 : 1;
 
     // Update UI
-    document.getElementById('infoVendor').textContent = state.device.manufacturerName || '\u2014';
+    document.getElementById('infoVendor').textContent = state.device.manufacturerName || '-';
     document.getElementById('infoProduct').textContent = state.device.productName || 'gs_usb device';
     document.getElementById('infoVidPid').textContent =
       `0x${state.device.vendorId.toString(16).toUpperCase()}:0x${state.device.productId.toString(16).toUpperCase()}`;
@@ -131,7 +131,7 @@ export async function connectDevice() {
     // Begin reading
     startReading();
 
-    addSystemLog('CAN interface started \u2014 listening for frames.');
+    addSystemLog('CAN interface started, listening for frames.');
   } catch (err) {
     console.error('Connection failed:', err);
     addSystemLog(`Connection failed: ${err.message}`);

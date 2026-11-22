@@ -143,7 +143,7 @@ export async function drainTxQueue() {
         // OUT endpoint stalled. Clear the halt and surface it (rate-limited)
         // so the user knows the device or bus needs intervention.
         try { await state.device.clearHalt('out', state.endpointOut); } catch (e) { /* */ }
-        reportTxError('OUT endpoint stalled — clearing halt');
+        reportTxError('OUT endpoint stalled, clearing halt');
       } else {
         reportTxError(`TX status: ${result.status}`);
       }

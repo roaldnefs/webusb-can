@@ -46,7 +46,7 @@ function normalizeFrame({ id, data = [], dlc, isExtended } = {}) {
 
 function sendOne(frame) {
   if (!state.isConnected) {
-    throw new Error('send: not connected — call api.connect() or api.simulator.start() first');
+    throw new Error('send: not connected. Call api.connect() or api.simulator.start() first');
   }
   const buf = buildGsHostFrame(frame.id, frame.data, frame.dlc, frame.isExtended);
   queueTx(buf, { id: frame.id, dlc: frame.dlc, data: frame.data, isExtended: frame.isExtended });
