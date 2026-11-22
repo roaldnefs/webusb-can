@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebUSB CAN — Browser-based CAN Bus Interface</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WebUSB CAN: Browser-based CAN Bus Interface</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script>
   // Apply saved theme before render to avoid a flash of the wrong palette.
@@ -15,55 +16,55 @@
   })();
 </script>
 </head>
-<body>
+<body data-pane="traffic">
 
-<div id="helpOverlay" class="help-overlay" hidden>
-  <div class="help-card">
-    <button class="help-close" aria-label="Close" onclick="hideHelp()">&times;</button>
-    <h2>Quick start</h2>
+<div id="helpOverlay" class="overlay" hidden>
+  <div class="dialog help-dialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <button class="icon-btn dialog-close" aria-label="Close" onclick="hideHelp()">&times;</button>
+    <h2 id="helpTitle">Quick start</h2>
 
     <section>
       <h3>1. Get on a bus</h3>
-      <p>In the <strong>Connection</strong> card on the sidebar, either:</p>
+      <p>In the top bar, either:</p>
       <ul>
-        <li><strong>Connect Device</strong> — attach a gs_usb / candleLight / CANable adapter and pick a bitrate.</li>
-        <li><strong>Start Simulator</strong> — run an in-browser virtual cluster. No hardware needed.</li>
+        <li><strong>Connect device</strong>: attach a gs_usb / candleLight / CANable adapter and pick a bitrate first.</li>
+        <li><strong>Start simulator</strong>: run an in-browser virtual car. No hardware needed.</li>
       </ul>
     </section>
 
     <section>
       <h3>2. Watch traffic</h3>
       <ul>
-        <li><strong>Log View</strong> — every frame, in arrival order. Click a row to copy its data hex.</li>
-        <li><strong>Sniff View</strong> — one row per CAN ID, with cycle time and bytes that flash amber when they change. Best for finding the ID that drives a behavior.</li>
-        <li>Use the <code>RX</code> / <code>TX</code> / <code>UDS</code> chips and the ID filter to narrow down.</li>
+        <li><strong>Log</strong>: every frame, in arrival order. Click a row to copy its data hex.</li>
+        <li><strong>Sniffer</strong>: one row per CAN ID, with cycle time and bytes that flash when they change. Best for finding the ID that drives a behavior.</li>
+        <li>Use the <code>RX</code> / <code>TX</code> / <code>UDS</code> filters and the ID filter to narrow down.</li>
       </ul>
     </section>
 
     <section>
       <h3>3. Send frames</h3>
       <ul>
-        <li>The <strong>Send bar</strong> at the bottom: type a hex ID and data bytes, hit <strong>Send</strong> for one frame or <strong>Repeat</strong> to send periodically.</li>
-        <li><strong>Signals</strong> sidebar card: toggleable pre-configured periodic senders. Pencil to edit, × to remove.</li>
+        <li>The <strong>send bar</strong> at the bottom: type a hex ID and data bytes, hit <strong>Send</strong> for one frame or <strong>Repeat</strong> to send periodically.</li>
+        <li><strong>Signals</strong> tab: saved periodic senders you can switch on and off.</li>
       </ul>
     </section>
 
     <section>
       <h3>4. Brute force / fuzz</h3>
-      <p><strong>Fuzzer</strong> sidebar card: cangen-style. Pick <em>random</em>, <em>increment</em>, or <em>fixed</em> for ID, DLC, and Data; set a gap and (optionally) a count, then <strong>Start Fuzz</strong>. Stops when the count is reached or you click again.</p>
+      <p><strong>Fuzzer</strong> tab: cangen-style. Pick <em>random</em>, <em>increment</em>, or <em>fixed</em> for ID, DLC, and data; set a gap and (optionally) a count, then <strong>Start fuzzing</strong>.</p>
     </section>
 
     <section>
       <h3>5. UDS / diagnostics</h3>
-      <p><strong>UDS</strong> sidebar card: TX/RX IDs (default <code>7E0</code>/<code>7E8</code>) and hex request bytes. Built-in ISO-TP transport, NRC name decoding, and a <em>Tester Present</em> auto-repeat checkbox to keep extended sessions alive.</p>
+      <p><strong>UDS</strong> tab: request and response IDs (default <code>7E0</code>/<code>7E8</code>) and hex request bytes, with built-in ISO-TP transport and NRC name decoding. <em>Tester present</em> keeps extended sessions alive. The simulator has an ECU to talk to: try <code>22 F1 90</code> to read its VIN.</p>
     </section>
 
     <section>
       <h3>6. Drive the simulator</h3>
       <ul>
-        <li>The <strong>Cluster</strong> overlay floats over the log/sniffer. Drag its title bar to reposition.</li>
-        <li>On-screen <strong>Accel</strong> / <strong>Brake</strong> / <strong>Left signal</strong> / etc. buttons emit real CAN frames into the loopback bus — the cluster reacts the same way it would to any other producer (Send, Repeat, Fuzzer).</li>
-        <li><strong>Bogus traffic</strong> checkbox sprays random IDs to make the puzzle harder. Turn it off for a clean demo.</li>
+        <li>The <strong>simulated car</strong> window floats over the log. Drag its title bar to move it.</li>
+        <li>Its buttons are the driver's controls: the simulated car broadcasts the result on the bus, so those frames appear as <code>RX</code>. Anything you send yourself appears as <code>TX</code> and drives the cluster the same way.</li>
+        <li><strong>Bogus traffic</strong> adds unrelated IDs to make the puzzle harder. Turn it off for a clean demo.</li>
       </ul>
     </section>
 
@@ -71,22 +72,21 @@
       <h3>7. Script from the console</h3>
       <p>Open DevTools (<kbd>F12</kbd>) and drive everything via <code>window.api</code>:</p>
       <ul>
-        <li><code>api.send({id: 0x244, data: [0,0,0,0x19,0,0,0,0]})</code> — send one frame.</li>
-        <li><code>const off = api.onAnyFrame(f =&gt; console.log(f.id.toString(16), f.data)); off()</code> — tap RX traffic.</li>
-        <li><code>api.simulator.start(); api.simulator.accel(true)</code> — drive the cluster without buttons.</li>
+        <li><code>api.send({id: 0x244, data: [0,0,0,0x19,0,0,0,0]})</code>: send one frame.</li>
+        <li><code>const off = api.onAnyFrame(f =&gt; console.log(f.id.toString(16), f.data)); off()</code>: tap RX traffic.</li>
+        <li><code>api.simulator.start(); api.simulator.accel(true)</code>: drive the cluster without buttons.</li>
       </ul>
-      <p>Full reference: <a href="https://github.com/roaldnefs/webusb-can#console-api" target="_blank" rel="noopener">README → Console API</a>.</p>
+      <p>Full reference: <a href="https://github.com/roaldnefs/webusb-can#console-api" target="_blank" rel="noopener">README, Console API</a>.</p>
     </section>
 
-    <p class="help-tip">Click the <strong>?</strong> in the header to reopen this guide anytime.</p>
+    <button class="btn btn-primary" onclick="hideHelp()">Got it</button>
   </div>
 </div>
 
-<div id="unsupportedOverlay" class="unsupported-overlay" hidden>
-  <div class="unsupported-card">
-    <button class="unsupported-close" aria-label="Close"
+<div id="unsupportedOverlay" class="overlay" hidden>
+  <div class="dialog unsupported-dialog" role="alertdialog">
+    <button class="icon-btn dialog-close" aria-label="Close"
             onclick="document.getElementById('unsupportedOverlay').hidden = true">&times;</button>
-    <div class="unsupported-icon">!</div>
     <h2>WebUSB is not available</h2>
     <p>This app needs the WebUSB API to talk to your CAN adapter.</p>
     <p>Open this page in <strong>Chrome</strong> or <strong>Edge</strong>, served over <strong>HTTPS</strong> or <strong>localhost</strong>.</p>
@@ -95,25 +95,44 @@
 </div>
 
 <div class="app" id="app">
-  <!-- Header -->
-  <header class="header">
-    <div class="header-left">
-      <div class="logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <rect x="6" y="6" width="12" height="12" rx="2"/>
-          <line x1="1" y1="10" x2="6" y2="10"/>
-          <line x1="1" y1="14" x2="6" y2="14"/>
-          <line x1="18" y1="10" x2="23" y2="10"/>
-          <line x1="18" y1="14" x2="23" y2="14"/>
-          <line x1="10" y1="1" x2="10" y2="6"/>
-          <line x1="14" y1="1" x2="14" y2="6"/>
-          <line x1="10" y1="18" x2="10" y2="23"/>
-          <line x1="14" y1="18" x2="14" y2="23"/>
-        </svg>
-      </div>
-      <div class="header-title">WebUSB<span>CAN</span></div>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-mark" src="logo.svg" alt="" width="32" height="32">
+      <span class="brand-name">WebUSB CAN</span>
     </div>
-    <div class="header-right">
+
+    <div class="conn">
+      <label class="inline-field">
+        <span>Bitrate</span>
+        <select id="bitrateSelect">
+          <option value="10000">10 kbit/s</option>
+          <option value="20000">20 kbit/s</option>
+          <option value="50000">50 kbit/s</option>
+          <option value="100000">100 kbit/s</option>
+          <option value="125000">125 kbit/s</option>
+          <option value="250000">250 kbit/s</option>
+          <option value="500000" selected>500 kbit/s</option>
+          <option value="800000">800 kbit/s</option>
+          <option value="1000000">1 Mbit/s</option>
+        </select>
+      </label>
+      <label class="inline-field">
+        <span>Mode</span>
+        <select id="modeSelect">
+          <option value="normal">Normal</option>
+          <option value="loopback">Loopback</option>
+          <option value="listenonly">Listen only</option>
+        </select>
+      </label>
+      <button id="connectBtn" class="btn btn-primary" onclick="handleConnect()">Connect device</button>
+      <button id="simBtn" class="btn" onclick="startSimulator()" title="Run an in-browser virtual car (no device needed)">Start simulator</button>
+    </div>
+
+    <div class="topbar-right">
+      <div id="statusChip" class="status-chip disconnected">
+        <span class="status-dot"></span>
+        <span id="statusText">Disconnected</span>
+      </div>
       <button id="helpBtn" class="icon-btn" aria-label="Help" title="Quick start guide" onclick="showHelp()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
@@ -121,7 +140,7 @@
           <line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       </button>
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme" onclick="toggleTheme()">
+      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Switch between light and dark" onclick="toggleTheme()">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="4"/>
           <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
@@ -130,218 +149,158 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
-      <div id="statusChip" class="status-chip disconnected">
-        <div class="status-dot"></div>
-        <span id="statusText">Disconnected</span>
-      </div>
     </div>
   </header>
 
-  <!-- Main Grid -->
   <div class="main">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="panel-title">Connection</div>
-
-      <div class="card" id="connectCard">
-        <button id="connectBtn" class="btn btn-primary" onclick="handleConnect()">
-          &#9654; Connect Device
-        </button>
-        <button id="simBtn" class="btn btn-sm" onclick="startSimulator()" style="margin-top:8px;" title="Run an in-browser CAN bus simulator (no device needed)">
-          Start Simulator
-        </button>
-        <button id="resetBusBtn" class="btn btn-sm" onclick="resetBus()" style="margin-top:8px;" title="Recover from bus-off / stuck device">
-          Reset CAN
-        </button>
+    <!-- Tools: one visible at a time -->
+    <aside class="tools">
+      <div class="tool-tabs" role="tablist" aria-label="Tools">
+        <button class="tool-tab" role="tab" data-tool="signals" onclick="showTool('signals')">Signals<span class="tab-dot" id="dotSignals" hidden title="A signal is sending"></span></button>
+        <button class="tool-tab" role="tab" data-tool="uds" onclick="showTool('uds')">UDS<span class="tab-dot" id="dotUds" hidden title="Tester present is running"></span></button>
+        <button class="tool-tab" role="tab" data-tool="fuzzer" onclick="showTool('fuzzer')">Fuzzer<span class="tab-dot" id="dotFuzzer" hidden title="Fuzzer is running"></span></button>
+        <button class="tool-tab" role="tab" data-tool="device" onclick="showTool('device')">Device</button>
       </div>
 
-      <div class="card">
-        <div class="form-group">
-          <label>Bitrate</label>
-          <select id="bitrateSelect">
-            <option value="10000">10 kbit/s</option>
-            <option value="20000">20 kbit/s</option>
-            <option value="50000">50 kbit/s</option>
-            <option value="100000">100 kbit/s</option>
-            <option value="125000">125 kbit/s</option>
-            <option value="250000">250 kbit/s</option>
-            <option value="500000" selected>500 kbit/s</option>
-            <option value="800000">800 kbit/s</option>
-            <option value="1000000">1 Mbit/s</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Mode</label>
-          <select id="modeSelect">
-            <option value="normal">Normal</option>
-            <option value="loopback">Loopback</option>
-            <option value="listenonly">Listen Only</option>
-          </select>
-        </div>
-        <div class="checkbox-row">
-          <input type="checkbox" id="autoScroll" checked>
-          <label for="autoScroll">Auto-scroll log</label>
-        </div>
-        <div class="checkbox-row">
-          <input type="checkbox" id="debugToggle" onchange="state.debugMode = this.checked">
-          <label for="debugToggle">Debug to console (F12)</label>
-        </div>
-      </div>
-
-      <div class="panel-title">Device Info</div>
-      <div class="card" id="deviceInfoCard">
-        <div class="device-info-grid" id="deviceInfo">
-          <div class="info-item">
-            <div class="info-label">Vendor</div>
-            <div class="info-value" id="infoVendor">—</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Product</div>
-            <div class="info-value" id="infoProduct">—</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">VID:PID</div>
-            <div class="info-value" id="infoVidPid">—</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Channels</div>
-            <div class="info-value" id="infoChannels">—</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel-title">Signals</div>
-      <div class="card">
+      <section class="tool" data-tool="signals" role="tabpanel">
+        <p class="tool-intro">Saved frames that send on a timer while switched on.</p>
         <div class="signal-list" id="signalList">
           <!-- Signals will be rendered here -->
         </div>
         <div class="add-signal-form">
-          <div class="add-signal-row">
-            <input type="text" id="newSigName" class="sig-name-input" placeholder="Name">
-            <input type="text" id="newSigId" class="sig-id-input" placeholder="ID (hex)">
+          <h3>Add or update a signal</h3>
+          <div class="field-row">
+            <label class="field grow"><span>Name</span><input type="text" id="newSigName" placeholder="Speed 100"></label>
+            <label class="field id"><span>ID (hex)</span><input type="text" id="newSigId" class="mono" placeholder="244"></label>
           </div>
-          <div class="add-signal-row">
-            <input type="text" id="newSigData" class="sig-data-input" placeholder="Data (hex bytes)">
-            <input type="number" id="newSigMs" class="sig-ms-input" placeholder="ms" min="10" max="5000" value="50">
+          <div class="field-row">
+            <label class="field grow"><span>Data (hex bytes)</span><input type="text" id="newSigData" class="mono" placeholder="00 00 00 27 10"></label>
+            <label class="field ms"><span>Every (ms)</span><input type="number" id="newSigMs" class="mono" min="10" max="5000" value="50"></label>
           </div>
-          <button id="addSigBtn" class="btn btn-sm" onclick="addSignal()" style="margin-top:2px;">+ Add Signal</button>
+          <button id="addSigBtn" class="btn" onclick="addSignal()">Add signal</button>
         </div>
-      </div>
+      </section>
 
-      <div class="panel-title">UDS</div>
-      <div class="card">
-        <div class="form-group">
-          <label>TX / RX ID (hex)</label>
-          <div class="uds-id-row">
-            <input type="text" id="udsTxId" placeholder="7E0" value="7E0">
-            <input type="text" id="udsRxId" placeholder="7E8" value="7E8">
-          </div>
+      <section class="tool" data-tool="uds" role="tabpanel" hidden>
+        <p class="tool-intro">Diagnostic requests over ISO-TP.</p>
+        <div class="field-row">
+          <label class="field grow"><span>Request ID (hex)</span><input type="text" id="udsTxId" class="mono" placeholder="7E0" value="7E0"></label>
+          <label class="field grow"><span>Response ID (hex)</span><input type="text" id="udsRxId" class="mono" placeholder="7E8" value="7E8"></label>
         </div>
-        <div class="form-group">
-          <label>Request bytes (hex)</label>
-          <input type="text" id="udsRequest" placeholder="22 F1 90" value="22 F1 90">
+        <label class="field"><span>Common requests</span>
+          <select id="udsPreset" onchange="if (this.value) document.getElementById('udsRequest').value = this.value">
+            <option value="22 F1 90">Read VIN</option>
+            <option value="10 03">Start extended session</option>
+            <option value="10 01">Back to default session</option>
+            <option value="3E 00">Tester present</option>
+            <option value="27 01">Security access: request seed</option>
+            <option value="19 02 FF">Read trouble codes</option>
+            <option value="14 FF FF FF">Clear trouble codes</option>
+            <option value="11 01">Reset ECU</option>
+          </select>
+        </label>
+        <label class="field"><span>Request bytes (hex)</span><input type="text" id="udsRequest" class="mono" placeholder="22 F1 90" value="22 F1 90"></label>
+        <button class="btn btn-primary" onclick="handleUdsSend()">Send request</button>
+        <div class="uds-result" id="udsResult" role="status" hidden>
+          <div class="uds-result-status" id="udsResultStatus"></div>
+          <div class="uds-result-bytes" id="udsResultBytes"></div>
         </div>
-        <button class="btn btn-sm" onclick="handleUdsSend()">Send Request</button>
-        <div class="checkbox-row" style="margin-top:10px;">
+        <label class="check">
           <input type="checkbox" id="udsTesterPresent" onchange="toggleTesterPresent(this)">
-          <label for="udsTesterPresent">Tester Present (3E 00 every 2 s)</label>
-        </div>
-      </div>
+          <span>Tester present (3E 00 every 2 s)</span>
+        </label>
+      </section>
 
-      <div class="panel-title">Fuzzer</div>
-      <div class="card">
-        <div class="form-group">
-          <label>ID</label>
-          <div class="fuzz-mode-row">
+      <section class="tool" data-tool="fuzzer" role="tabpanel" hidden>
+        <p class="tool-intro">Generate frames, cangen-style.</p>
+        <div class="field-row">
+          <label class="field mode"><span>ID</span>
             <select id="fuzzIdMode">
               <option value="random" selected>random</option>
               <option value="increment">increment</option>
               <option value="fixed">fixed</option>
             </select>
-            <input type="text" id="fuzzIdValue" placeholder="hex (start/fixed)" value="100">
-          </div>
-          <div class="checkbox-row" style="margin-top:4px;">
-            <input type="checkbox" id="fuzzExtended">
-            <label for="fuzzExtended">29-bit extended</label>
-          </div>
+          </label>
+          <label class="field grow"><span>Start / fixed (hex)</span><input type="text" id="fuzzIdValue" class="mono" value="100"></label>
         </div>
-        <div class="form-group">
-          <label>DLC</label>
-          <div class="fuzz-mode-row">
+        <label class="check">
+          <input type="checkbox" id="fuzzExtended">
+          <span>29-bit extended IDs</span>
+        </label>
+        <div class="field-row">
+          <label class="field mode"><span>DLC</span>
             <select id="fuzzDlcMode">
               <option value="random">random</option>
               <option value="increment">increment</option>
               <option value="fixed" selected>fixed</option>
             </select>
-            <input type="number" id="fuzzDlcValue" min="0" max="8" value="8">
-          </div>
+          </label>
+          <label class="field grow"><span>Start / fixed</span><input type="number" id="fuzzDlcValue" class="mono" min="0" max="8" value="8"></label>
         </div>
-        <div class="form-group">
-          <label>Data</label>
-          <div class="fuzz-mode-row">
+        <div class="field-row">
+          <label class="field mode"><span>Data</span>
             <select id="fuzzDataMode">
               <option value="random" selected>random</option>
               <option value="increment">increment</option>
               <option value="fixed">fixed</option>
             </select>
-            <input type="text" id="fuzzDataValue" placeholder="hex bytes (start/fixed)">
-          </div>
+          </label>
+          <label class="field grow"><span>Start / fixed (hex bytes)</span><input type="text" id="fuzzDataValue" class="mono"></label>
         </div>
-        <div class="form-group">
-          <label>Gap (ms) / Count</label>
-          <div class="fuzz-mode-row">
-            <input type="number" id="fuzzGap" min="0" max="60000" value="10">
-            <input type="number" id="fuzzMax" min="0" placeholder="0 = unlimited">
-          </div>
+        <div class="field-row">
+          <label class="field grow"><span>Gap (ms)</span><input type="number" id="fuzzGap" class="mono" min="0" max="60000" value="10"></label>
+          <label class="field grow"><span>Count (0 = unlimited)</span><input type="number" id="fuzzMax" class="mono" min="0" placeholder="0"></label>
         </div>
-        <button id="fuzzBtn" class="btn btn-sm" onclick="toggleFuzzer()">Start Fuzz</button>
-        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
-          Sent: <span id="fuzzSent">0</span>
-        </div>
-      </div>
+        <button id="fuzzBtn" class="btn btn-primary" onclick="toggleFuzzer()">Start fuzzing</button>
+        <p class="tool-note">Frames sent: <span id="fuzzSent" class="mono">0</span></p>
+      </section>
 
-      <div class="panel-title">About</div>
-      <div class="card about-card">
-        <p>WebUSB CAN — browser-based CAN bus interface.</p>
-        <a href="https://github.com/roaldnefs/webusb-can" target="_blank" rel="noopener">github.com/roaldnefs/webusb-can</a>
-      </div>
-
+      <section class="tool" data-tool="device" role="tabpanel" hidden>
+        <dl class="info-list" id="deviceInfo">
+          <div><dt>Vendor</dt><dd id="infoVendor">-</dd></div>
+          <div><dt>Product</dt><dd id="infoProduct">-</dd></div>
+          <div><dt>VID:PID</dt><dd id="infoVidPid" class="mono">-</dd></div>
+          <div><dt>Channels</dt><dd id="infoChannels" class="mono">-</dd></div>
+        </dl>
+        <button id="resetBusBtn" class="btn" hidden onclick="resetBus()" title="Recover from bus-off or a stuck device">Reset CAN channel</button>
+        <label class="check">
+          <input type="checkbox" id="debugToggle" onchange="state.debugMode = this.checked">
+          <span>Log raw USB frames to the browser console</span>
+        </label>
+        <p class="tool-note about">WebUSB CAN, a browser-based CAN bus interface.<br>
+          <a href="https://github.com/roaldnefs/webusb-can" target="_blank" rel="noopener">github.com/roaldnefs/webusb-can</a></p>
+      </section>
     </aside>
 
-    <!-- Content Area -->
     <div class="log-area">
-      <!-- Stats Bar -->
-      <div class="stats-bar">
-        <div class="stat">
-          <span class="stat-label">RX</span>
-          <span class="stat-value" id="rxCount">0</span>
-          <span class="stat-rate" id="rxRate">0/s</span>
+      <div class="toolbar">
+        <div class="counters">
+          <div class="counter rx"><span class="counter-label">RX</span><span class="counter-value" id="rxCount">0</span><span class="counter-rate" id="rxRate">0/s</span></div>
+          <div class="counter tx"><span class="counter-label">TX</span><span class="counter-value" id="txCount">0</span><span class="counter-rate" id="txRate">0/s</span></div>
+          <div class="counter err"><span class="counter-label">Errors</span><span class="counter-value" id="errCount">0</span></div>
         </div>
-        <div class="stat">
-          <span class="stat-label">TX</span>
-          <span class="stat-value" id="txCount">0</span>
-          <span class="stat-rate" id="txRate">0/s</span>
+        <div class="status-msg" id="statusMsg" role="status"></div>
+        <div class="segmented" role="group" aria-label="View">
+          <button id="viewLogBtn" aria-pressed="true" onclick="setView('log')">Log</button>
+          <button id="viewSniffBtn" aria-pressed="false" onclick="setView('sniff')">Sniffer</button>
         </div>
-        <div class="stat">
-          <span class="stat-label">Errors</span>
-          <span class="stat-value" id="errCount">0</span>
-        </div>
-        <div style="flex:1"></div>
-        <button id="viewToggleBtn" class="btn btn-sm" onclick="toggleView()">Sniff View</button>
-        <button id="pauseBtn" class="btn btn-sm" onclick="togglePause()">Pause</button>
-        <button class="btn btn-sm" onclick="clearLog()">Clear Log</button>
-        <button class="btn btn-sm" onclick="exportLog()">Export CSV</button>
+        <button id="pauseBtn" class="btn" onclick="togglePause()">Pause</button>
+        <button class="btn" onclick="clearLog()">Clear</button>
+        <button class="btn" onclick="exportLog()"><span>Export<span class="wide-only"> CSV</span></span></button>
       </div>
 
-      <!-- Log Toolbar -->
-      <div class="log-toolbar">
-        <div class="log-toolbar-left">
-          <span class="filter-chip active" onclick="setFilter('all', this)">All</span>
-          <span class="filter-chip" onclick="setFilter('rx', this)">RX</span>
-          <span class="filter-chip" onclick="setFilter('tx', this)">TX</span>
-          <span class="filter-chip" onclick="setFilter('uds', this)">UDS</span>
+      <div class="filterbar">
+        <div class="chips" role="group" aria-label="Filter by direction">
+          <button type="button" class="filter-chip active" onclick="setFilter('all', this)">All</button>
+          <button type="button" class="filter-chip" onclick="setFilter('rx', this)">RX</button>
+          <button type="button" class="filter-chip" onclick="setFilter('tx', this)">TX</button>
+          <button type="button" class="filter-chip" onclick="setFilter('uds', this)" title="Only the UDS request and response IDs">UDS</button>
         </div>
-        <input type="text" id="filterInput" placeholder="Filter by ID (hex, e.g. 7DF or 0x123)" style="width:220px; font-size:12px; padding:5px 10px;">
+        <input type="text" id="filterInput" class="mono" aria-label="Filter by ID" placeholder="Filter by ID, e.g. 7DF">
+        <label class="check follow">
+          <input type="checkbox" id="autoScroll" checked>
+          <span>Follow<span class="wide-only"> newest</span></span>
+        </label>
       </div>
 
       <!-- Log column header -->
@@ -356,16 +315,19 @@
       <!-- Log entries -->
       <div class="log-scroll" id="logScroll">
         <div class="empty-state" id="emptyState">
-          <div class="empty-icon">&#128268;</div>
-          <h3>No CAN messages yet</h3>
-          <p>Connect your gs_usb compatible CAN adapter to start capturing CAN bus traffic.</p>
+          <h3>No frames yet</h3>
+          <p>Connect a gs_usb compatible CAN adapter, or start the simulator to try everything without hardware.</p>
+          <div class="empty-actions">
+            <button class="btn btn-primary" onclick="handleConnect()">Connect device</button>
+            <button class="btn" onclick="startSimulator()">Start simulator</button>
+          </div>
         </div>
       </div>
 
       <!-- Sniffer column header -->
       <div class="sniff-row sniff-header" id="sniffHeader" hidden>
         <span class="sniff-id">ID</span>
-        <span class="sniff-cycle">Cycle (ms)</span>
+        <span class="sniff-cycle">Cycle<span class="wide-only"> (ms)</span></span>
         <span class="sniff-count">Count</span>
         <span class="sniff-dlc">DLC</span>
         <span class="sniff-data">Data</span>
@@ -375,123 +337,178 @@
       <!-- Sniffer rolled-up view -->
       <div class="sniffer-scroll" id="snifferScroll" hidden>
         <div class="empty-state" id="snifferEmpty">
-          <div class="empty-icon">&#128270;</div>
-          <h3>Sniffer is empty</h3>
-          <p>Receive a frame to populate the per-ID table. Bytes that change will flash.</p>
+          <h3>Nothing to show yet</h3>
+          <p>Each CAN ID gets one row here once a frame arrives. Bytes flash when they change.</p>
         </div>
       </div>
 
-      <!-- Cluster simulator view -->
+      <!-- Cluster simulator window -->
       <div class="cluster-area" id="clusterArea" hidden>
         <div class="cluster-header">
-          <span>Virtual cluster</span>
+          <span>Simulated car</span>
           <span class="cluster-header-actions">
             <button class="cluster-iconbtn" aria-label="Minimize" title="Minimize" onclick="toggleClusterMinimize()">&#8722;</button>
             <button class="cluster-iconbtn" aria-label="Stop simulator" title="Stop simulator" onclick="stopSimulator()">&times;</button>
           </span>
         </div>
         <div class="cluster-stage">
-          <div class="cluster-warnings">
-            <div class="warn-lamp" id="warnImmobilizer" title="Immobilizer">IMMOBILIZER</div>
-            <div class="warn-lamp" id="warnAirbag"      title="Airbag">AIRBAG</div>
-            <div class="warn-lamp" id="warnOilPressure" title="Oil pressure">OIL PRESSURE</div>
-            <div class="warn-lamp" id="warnCheckEngine" title="Check engine">CHECK MOTOR</div>
-          </div>
+          <svg class="cluster-panel" viewBox="0 0 660 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Instrument cluster">
+            <defs>
+              <linearGradient id="clusterBezel" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#8d9096"/><stop offset="0.45" stop-color="#2b2c30"/><stop offset="1" stop-color="#5d5f65"/>
+              </linearGradient>
+              <radialGradient id="clusterFace" cx="0.5" cy="0.42" r="0.6">
+                <stop offset="0" stop-color="#17181b"/><stop offset="1" stop-color="#050506"/>
+              </radialGradient>
+            </defs>
+            <rect class="panel-housing" x="1" y="1" width="658" height="268" rx="34"/>
 
-          <div class="cluster-gauges">
-            <svg class="cluster-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="90" class="gauge-face"/>
-              <circle cx="100" cy="100" r="90" class="gauge-ring"/>
-              <g class="gauge-ticks">
-                <!-- Tach ticks at -120 to +120 deg, one per 800 RPM. -->
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-120 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-96 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-72 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-48 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-24 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(0 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(24 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(48 100 100)"/>
-                <line class="redline" x1="100" y1="20" x2="100" y2="32" transform="rotate(72 100 100)"/>
-                <line class="redline" x1="100" y1="20" x2="100" y2="32" transform="rotate(96 100 100)"/>
-                <line class="redline" x1="100" y1="20" x2="100" y2="32" transform="rotate(120 100 100)"/>
-              </g>
-              <line id="clusterRpmNeedle" class="gauge-needle" x1="100" y1="115" x2="100" y2="35" transform="rotate(-120 100 100)"/>
-              <circle cx="100" cy="100" r="6" class="gauge-hub"/>
-              <text id="clusterRpm" x="100" y="150" text-anchor="middle" class="gauge-value">0</text>
-              <text x="100" y="170" text-anchor="middle" class="gauge-unit">rpm</text>
+            <!-- Tachometer: one major tick per 1000 RPM, -120 to +120 deg. -->
+            <svg x="14" y="14" width="242" height="242" viewBox="0 0 200 200">
+                <circle class="dial-bezel" cx="100" cy="100" r="96"/>
+                <circle class="dial-face" cx="100" cy="100" r="92"/>
+                <path class="dial-redzone" d="M183.1 77.7A86 86 0 0 1 174.5 143.0"/>
+                <g class="dial-ticks">
+                  <line class="major" x1="23.8" y1="144.0" x2="33.3" y2="138.5"/><line class="minor" x1="19.6" y1="135.8" x2="24.2" y2="133.8"/><line class="minor" x1="16.3" y1="127.2" x2="21.1" y2="125.6"/>
+                  <line class="minor" x1="13.9" y1="118.3" x2="18.8" y2="117.3"/><line class="minor" x1="12.5" y1="109.2" x2="17.5" y2="108.7"/><line class="major" x1="12.0" y1="100.0" x2="23.0" y2="100.0"/>
+                  <line class="minor" x1="12.5" y1="90.8" x2="17.5" y2="91.3"/><line class="minor" x1="13.9" y1="81.7" x2="18.8" y2="82.7"/><line class="minor" x1="16.3" y1="72.8" x2="21.1" y2="74.4"/>
+                  <line class="minor" x1="19.6" y1="64.2" x2="24.2" y2="66.2"/><line class="major" x1="23.8" y1="56.0" x2="33.3" y2="61.5"/><line class="minor" x1="28.8" y1="48.3" x2="32.9" y2="51.2"/>
+                  <line class="minor" x1="34.6" y1="41.1" x2="38.3" y2="44.5"/><line class="minor" x1="41.1" y1="34.6" x2="44.5" y2="38.3"/><line class="minor" x1="48.3" y1="28.8" x2="51.2" y2="32.9"/>
+                  <line class="major" x1="56.0" y1="23.8" x2="61.5" y2="33.3"/><line class="minor" x1="64.2" y1="19.6" x2="66.2" y2="24.2"/><line class="minor" x1="72.8" y1="16.3" x2="74.4" y2="21.1"/>
+                  <line class="minor" x1="81.7" y1="13.9" x2="82.7" y2="18.8"/><line class="minor" x1="90.8" y1="12.5" x2="91.3" y2="17.5"/><line class="major" x1="100.0" y1="12.0" x2="100.0" y2="23.0"/>
+                  <line class="minor" x1="109.2" y1="12.5" x2="108.7" y2="17.5"/><line class="minor" x1="118.3" y1="13.9" x2="117.3" y2="18.8"/><line class="minor" x1="127.2" y1="16.3" x2="125.6" y2="21.1"/>
+                  <line class="minor" x1="135.8" y1="19.6" x2="133.8" y2="24.2"/><line class="major" x1="144.0" y1="23.8" x2="138.5" y2="33.3"/><line class="minor" x1="151.7" y1="28.8" x2="148.8" y2="32.9"/>
+                  <line class="minor" x1="158.9" y1="34.6" x2="155.5" y2="38.3"/><line class="minor" x1="165.4" y1="41.1" x2="161.7" y2="44.5"/><line class="minor" x1="171.2" y1="48.3" x2="167.1" y2="51.2"/>
+                  <line class="major" x1="176.2" y1="56.0" x2="166.7" y2="61.5"/><line class="minor" x1="180.4" y1="64.2" x2="175.8" y2="66.2"/><line class="minor" x1="183.7" y1="72.8" x2="178.9" y2="74.4"/>
+                  <line class="minor red" x1="186.1" y1="81.7" x2="181.2" y2="82.7"/><line class="minor red" x1="187.5" y1="90.8" x2="182.5" y2="91.3"/><line class="major red" x1="188.0" y1="100.0" x2="177.0" y2="100.0"/>
+                  <line class="minor red" x1="187.5" y1="109.2" x2="182.5" y2="108.7"/><line class="minor red" x1="186.1" y1="118.3" x2="181.2" y2="117.3"/><line class="minor red" x1="183.7" y1="127.2" x2="178.9" y2="125.6"/>
+                  <line class="minor red" x1="180.4" y1="135.8" x2="175.8" y2="133.8"/><line class="major red" x1="176.2" y1="144.0" x2="166.7" y2="138.5"/>
+                </g>
+                <g class="dial-numerals">
+                  <text x="43.7" y="136.7">0</text><text x="35.0" y="104.2">1</text><text x="43.7" y="71.7">2</text><text x="67.5" y="47.9">3</text>
+                  <text x="100.0" y="39.2">4</text><text x="132.5" y="47.9">5</text><text x="156.3" y="71.7">6</text><text class="red" x="165.0" y="104.2">7</text>
+                  <text class="red" x="156.3" y="136.7">8</text>
+                </g>
+                <path class="mini-track" d="M67.9 168.9A76 76 0 0 0 132.1 168.9"/>
+                <path class="mini-value" id="clusterTemp" d="M67.9 168.9A76 76 0 0 0 132.1 168.9" pathLength="100" stroke-dasharray="0 100"/>
+                <text class="mini-label" x="58.6" y="166.2">C</text><text class="mini-label" x="141.4" y="166.2">H</text>
+                <text class="dial-unit" x="100" y="154">×1000 r/min</text>
+                <text class="dial-readout" id="clusterRpm" x="100" y="143">0</text>
+                <polygon id="clusterRpmNeedle" class="dial-needle" points="98.4,114 101.6,114 100.7,20 99.3,20" transform="rotate(-120 100 100)"/>
+                <circle class="dial-hub" cx="100" cy="100" r="9"/><circle class="dial-hub-cap" cx="100" cy="100" r="3.5"/>
             </svg>
 
-            <div class="cluster-center">
-              <div class="cluster-signals">
-                <div class="signal-light" id="clusterSignalLeft" title="Left turn signal">&#9664;</div>
-                <div class="signal-light" id="clusterSignalRight" title="Right turn signal">&#9654;</div>
-              </div>
-              <div class="cluster-doors" title="Door indicators (filled = open / unlocked)">
-                <div class="door-indicator" id="clusterDoorFL">FL</div>
-                <div class="door-indicator" id="clusterDoorFR">FR</div>
-                <div class="door-indicator" id="clusterDoorRL">RL</div>
-                <div class="door-indicator" id="clusterDoorRR">RR</div>
-              </div>
-            </div>
-
-            <svg class="cluster-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="90" class="gauge-face"/>
-              <circle cx="100" cy="100" r="90" class="gauge-ring"/>
-              <g class="gauge-ticks">
-                <!-- Speedometer ticks at -120 to +120 deg, one per 20 km/h. -->
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-120 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-96 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-72 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-48 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(-24 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(0 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(24 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(48 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(72 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(96 100 100)"/>
-                <line x1="100" y1="20" x2="100" y2="32" transform="rotate(120 100 100)"/>
-              </g>
-              <line id="clusterSpeedNeedle" class="gauge-needle" x1="100" y1="115" x2="100" y2="35" transform="rotate(-120 100 100)"/>
-              <circle cx="100" cy="100" r="6" class="gauge-hub"/>
-              <text id="clusterSpeed" x="100" y="150" text-anchor="middle" class="gauge-value">0</text>
-              <text x="100" y="170" text-anchor="middle" class="gauge-unit">km/h</text>
+            <!-- Speedometer: one major tick per 20 km/h, -120 to +120 deg. -->
+            <svg x="404" y="14" width="242" height="242" viewBox="0 0 200 200">
+                <circle class="dial-bezel" cx="100" cy="100" r="96"/>
+                <circle class="dial-face" cx="100" cy="100" r="92"/>
+                <g class="dial-ticks">
+                  <line class="major" x1="23.8" y1="144.0" x2="33.3" y2="138.5"/><line class="minor" x1="19.6" y1="135.8" x2="24.2" y2="133.8"/><line class="minor" x1="16.3" y1="127.2" x2="21.1" y2="125.6"/>
+                  <line class="minor" x1="13.9" y1="118.3" x2="18.8" y2="117.3"/><line class="major" x1="12.5" y1="109.2" x2="23.4" y2="108.0"/><line class="minor" x1="12.0" y1="100.0" x2="17.0" y2="100.0"/>
+                  <line class="minor" x1="12.5" y1="90.8" x2="17.5" y2="91.3"/><line class="minor" x1="13.9" y1="81.7" x2="18.8" y2="82.7"/><line class="major" x1="16.3" y1="72.8" x2="26.8" y2="76.2"/>
+                  <line class="minor" x1="19.6" y1="64.2" x2="24.2" y2="66.2"/><line class="minor" x1="23.8" y1="56.0" x2="28.1" y2="58.5"/><line class="minor" x1="28.8" y1="48.3" x2="32.9" y2="51.2"/>
+                  <line class="major" x1="34.6" y1="41.1" x2="42.8" y2="48.5"/><line class="minor" x1="41.1" y1="34.6" x2="44.5" y2="38.3"/><line class="minor" x1="48.3" y1="28.8" x2="51.2" y2="32.9"/>
+                  <line class="minor" x1="56.0" y1="23.8" x2="58.5" y2="28.1"/><line class="major" x1="64.2" y1="19.6" x2="68.7" y2="29.7"/><line class="minor" x1="72.8" y1="16.3" x2="74.4" y2="21.1"/>
+                  <line class="minor" x1="81.7" y1="13.9" x2="82.7" y2="18.8"/><line class="minor" x1="90.8" y1="12.5" x2="91.3" y2="17.5"/><line class="major" x1="100.0" y1="12.0" x2="100.0" y2="23.0"/>
+                  <line class="minor" x1="109.2" y1="12.5" x2="108.7" y2="17.5"/><line class="minor" x1="118.3" y1="13.9" x2="117.3" y2="18.8"/><line class="minor" x1="127.2" y1="16.3" x2="125.6" y2="21.1"/>
+                  <line class="major" x1="135.8" y1="19.6" x2="131.3" y2="29.7"/><line class="minor" x1="144.0" y1="23.8" x2="141.5" y2="28.1"/><line class="minor" x1="151.7" y1="28.8" x2="148.8" y2="32.9"/>
+                  <line class="minor" x1="158.9" y1="34.6" x2="155.5" y2="38.3"/><line class="major" x1="165.4" y1="41.1" x2="157.2" y2="48.5"/><line class="minor" x1="171.2" y1="48.3" x2="167.1" y2="51.2"/>
+                  <line class="minor" x1="176.2" y1="56.0" x2="171.9" y2="58.5"/><line class="minor" x1="180.4" y1="64.2" x2="175.8" y2="66.2"/><line class="major" x1="183.7" y1="72.8" x2="173.2" y2="76.2"/>
+                  <line class="minor" x1="186.1" y1="81.7" x2="181.2" y2="82.7"/><line class="minor" x1="187.5" y1="90.8" x2="182.5" y2="91.3"/><line class="minor" x1="188.0" y1="100.0" x2="183.0" y2="100.0"/>
+                  <line class="major" x1="187.5" y1="109.2" x2="176.6" y2="108.0"/><line class="minor" x1="186.1" y1="118.3" x2="181.2" y2="117.3"/><line class="minor" x1="183.7" y1="127.2" x2="178.9" y2="125.6"/>
+                  <line class="minor" x1="180.4" y1="135.8" x2="175.8" y2="133.8"/><line class="major" x1="176.2" y1="144.0" x2="166.7" y2="138.5"/>
+                </g>
+                <g class="dial-numerals">
+                  <text x="45.4" y="135.7">0</text><text x="37.3" y="110.8">20</text><text x="40.1" y="84.7">40</text><text x="53.2" y="62.0">60</text>
+                  <text x="74.4" y="46.6">80</text><text x="100.0" y="41.2">100</text><text x="125.6" y="46.6">120</text><text x="146.8" y="62.0">140</text>
+                  <text x="159.9" y="84.7">160</text><text x="162.7" y="110.8">180</text><text x="154.6" y="135.7">200</text>
+                </g>
+                <path class="mini-track" d="M67.9 168.9A76 76 0 0 0 132.1 168.9"/>
+                <path class="mini-value" id="clusterFuel" d="M67.9 168.9A76 76 0 0 0 132.1 168.9" pathLength="100" stroke-dasharray="0 100"/>
+                <text class="mini-label" x="58.6" y="166.2">E</text><text class="mini-label" x="141.4" y="166.2">F</text>
+                <text class="dial-unit" x="100" y="154">km/h</text>
+                <text class="dial-readout" id="clusterSpeed" x="100" y="143">0</text>
+                <polygon id="clusterSpeedNeedle" class="dial-needle" points="98.4,114 101.6,114 100.7,20 99.3,20" transform="rotate(-120 100 100)"/>
+                <circle class="dial-hub" cx="100" cy="100" r="9"/><circle class="dial-hub-cap" cx="100" cy="100" r="3.5"/>
             </svg>
-          </div>
 
-          <div class="cluster-lcd" id="clusterLcd"></div>
+            <path class="turn-arrow" id="clusterSignalLeft" d="M270 34l16-13v8h14v10h-14v8z"><title>Left turn signal</title></path>
+            <path class="turn-arrow" id="clusterSignalRight" d="M390 34l-16-13v8h-14v10h14v8z"><title>Right turn signal</title></path>
+
+            <rect class="mfd-screen" x="268" y="58" width="124" height="132" rx="8"/>
+            <text class="mfd-gear" id="clusterGear" x="300" y="122">1</text>
+            <text class="mfd-caption" x="300" y="138">gear</text>
+            <g class="mfd-car" transform="translate(338 74)">
+              <title>Doors (red = open / unlocked)</title>
+              <rect class="car-body" x="6" y="0" width="26" height="60" rx="9"/>
+              <path class="car-glass" d="M10 17q9-5 18 0M10 46q9 4 18 0"/>
+              <line class="car-door left" id="clusterDoorFL" x1="6" y1="17" x2="6" y2="31"/>
+              <line class="car-door right" id="clusterDoorFR" x1="32" y1="17" x2="32" y2="31"/>
+              <line class="car-door left" id="clusterDoorRL" x1="6" y1="33" x2="6" y2="46"/>
+              <line class="car-door right" id="clusterDoorRR" x1="32" y1="33" x2="32" y2="46"/>
+            </g>
+            <line class="mfd-rule" x1="278" y1="154" x2="382" y2="154"/>
+            <text class="mfd-line" id="clusterLcd" x="330" y="176"></text>
+
+            <g class="telltale amber" id="warnImmobilizer" transform="translate(266 208)">
+              <title>Immobilizer</title>
+              <path d="M2 11.5V9l2.6-.8 2-3.2h8.8l2 3.2 2.6.8v2.5z"/><circle cx="6.5" cy="11.5" r="1.7"/><circle cx="15.5" cy="11.5" r="1.7"/>
+              <rect x="8.5" y="17" width="5" height="4" rx="0.8"/><path d="M9.6 17v-1.3a1.4 1.4 0 0 1 2.8 0V17"/>
+            </g>
+            <g class="telltale red" id="warnAirbag" transform="translate(301 208)">
+              <title>Airbag</title>
+              <circle cx="7" cy="5" r="2.3"/><path d="M4 9.5l2 9h7M7 9v5.5h4.5l3 5.5"/><circle cx="15.5" cy="8.5" r="4.2"/>
+            </g>
+            <g class="telltale red" id="warnOilPressure" transform="translate(336 208)">
+              <title>Oil pressure</title>
+              <path d="M2 8.5l3.5 1.2V9h7l1.6 2 6-2.6 1.2 1.2-6.8 6.4H5.5V12L2.6 11z"/><path d="M7.5 9V6.5h3.5V9"/><circle cx="21" cy="15.5" r="1"/>
+            </g>
+            <g class="telltale amber" id="warnCheckEngine" transform="translate(371 208)">
+              <title>Check engine</title>
+              <path d="M5.5 10.5h3L10 9h6.5v3h2v-1.5H21v7h-2.5V16h-2v3h-7l-2-2h-2z"/><path d="M10.5 6.5h5M13 6.5V9M2.5 12v4M2.5 14h3"/>
+            </g>
+          </svg>
         </div>
 
         <div class="cluster-controls">
-          <button class="btn btn-sm cluster-btn-accel" onmousedown="simAccel(true)" onmouseup="simAccel(false)" onmouseleave="simAccel(false)" ontouchstart="simAccel(true)" ontouchend="simAccel(false)">Accel</button>
-          <button class="btn btn-sm cluster-btn-brake" onmousedown="simBrake(true)" onmouseup="simBrake(false)" onmouseleave="simBrake(false)" ontouchstart="simBrake(true)" ontouchend="simBrake(false)">Brake</button>
-          <button class="btn btn-sm" onclick="simSignalLeft()">Left signal</button>
-          <button class="btn btn-sm" onclick="simSignalRight()">Right signal</button>
-          <button class="btn btn-sm" onclick="simDoor('FL')">FL</button>
-          <button class="btn btn-sm" onclick="simDoor('FR')">FR</button>
-          <button class="btn btn-sm" onclick="simDoor('RL')">RL</button>
-          <button class="btn btn-sm" onclick="simDoor('RR')">RR</button>
+          <button class="btn" id="simBtnSignalLeft" aria-pressed="false" onclick="simSignalLeft()">&#9664; Signal</button>
+          <button class="btn cluster-btn-brake" id="simBtnBrake" aria-pressed="false" onmousedown="simBrake(true)" onmouseup="simBrake(false)" onmouseleave="simBrake(false)" ontouchstart="simBrake(true)" ontouchend="simBrake(false)">Brake</button>
+          <button class="btn cluster-btn-accel" id="simBtnAccel" aria-pressed="false" onmousedown="simAccel(true)" onmouseup="simAccel(false)" onmouseleave="simAccel(false)" ontouchstart="simAccel(true)" ontouchend="simAccel(false)">Accelerate</button>
+          <button class="btn" id="simBtnSignalRight" aria-pressed="false" onclick="simSignalRight()">Signal &#9654;</button>
         </div>
-        <div class="checkbox-row" style="justify-content:center;">
-          <input type="checkbox" id="simBogus" checked onchange="setSimBogus(this.checked)">
-          <label for="simBogus">Bogus traffic</label>
+        <div class="cluster-doors-row">
+          <span>Doors</span>
+          <button class="btn" id="simBtnDoorFL" aria-pressed="false" title="Front left" onclick="simDoor('FL')">FL</button>
+          <button class="btn" id="simBtnDoorFR" aria-pressed="false" title="Front right" onclick="simDoor('FR')">FR</button>
+          <button class="btn" id="simBtnDoorRL" aria-pressed="false" title="Rear left" onclick="simDoor('RL')">RL</button>
+          <button class="btn" id="simBtnDoorRR" aria-pressed="false" title="Rear right" onclick="simDoor('RR')">RR</button>
+          <label class="check cluster-bogus">
+            <input type="checkbox" id="simBogus" checked onchange="setSimBogus(this.checked)">
+            <span>Bogus<span class="wide-only"> traffic</span></span>
+          </label>
         </div>
+        <p class="cluster-hint">Hold Accelerate or Brake. Arrow keys work too: <kbd>&uarr;</kbd> accelerate, <kbd>&darr;</kbd> brake, <kbd>&larr;</kbd> <kbd>&rarr;</kbd> signals.</p>
       </div>
 
-      <!-- Send Bar -->
+      <!-- Send bar -->
       <div class="send-bar">
-        <input type="text" id="sendId" class="id-input" placeholder="ID (hex)" maxlength="8" value="7DF">
-        <input type="number" id="sendDlc" class="dlc-input" placeholder="DLC" min="0" max="8" value="8">
-        <input type="text" id="sendData" placeholder="Data bytes (hex, e.g. 02 01 0C 00 00 00 00 00)" value="">
-        <button class="btn btn-success btn-sm" onclick="handleSend()" style="width:auto; min-width:70px;">Send</button>
-        <div class="interval-group">
-          <input type="number" id="intervalMs" class="interval-input" placeholder="ms" min="1" max="60000" value="100">
-          <span class="interval-label">ms</span>
-          <button id="repeatBtn" class="btn btn-repeat btn-sm" onclick="toggleRepeat()" style="width:auto; min-width:80px;">Repeat</button>
-        </div>
+        <label class="field id"><span>ID (hex)</span><input type="text" id="sendId" class="mono" maxlength="8" value="7DF"></label>
+        <label class="field dlc"><span>DLC</span><input type="number" id="sendDlc" class="mono" min="0" max="8" value="8"></label>
+        <label class="field grow"><span>Data (hex bytes)</span><input type="text" id="sendData" class="mono" placeholder="02 01 0C 00 00 00 00 00" value=""></label>
+        <button class="btn btn-primary" onclick="handleSend()">Send</button>
+        <span class="send-divider"></span>
+        <label class="field ms"><span>Every (ms)</span><input type="number" id="intervalMs" class="mono" min="1" max="60000" value="100"></label>
+        <button id="repeatBtn" class="btn btn-repeat" onclick="toggleRepeat()">Repeat</button>
       </div>
     </div>
   </div>
+
+  <!-- Phones: one pane at a time -->
+  <nav class="mobile-nav" aria-label="Sections">
+    <button data-pane="traffic" onclick="showPane('traffic')">Traffic</button>
+    <button data-pane="tools" onclick="showPane('tools')">Tools</button>
+    <button data-pane="car" onclick="showPane('car')">Car</button>
+  </nav>
 </div>
 
 <script type="module" src="js/app.js"></script>

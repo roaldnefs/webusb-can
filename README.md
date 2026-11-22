@@ -1,3 +1,5 @@
+<img src="logo.svg" alt="" width="64" height="64">
+
 # WebUSB CAN
 
 A browser-based CAN bus interface using the WebUSB API. No drivers, no installs, just open Chrome and connect your adapter.
@@ -20,7 +22,7 @@ Works with any USB-to-CAN adapter running **gs_usb compatible firmware** (candle
 
 ## Usage
 
-Serve the project over HTTP (ES modules require it — `file://` will not work):
+Serve the project over HTTP (ES modules require it; `file://` will not work):
 
 ```sh
 python3 -m http.server 8000
@@ -57,11 +59,11 @@ const r = api.sendRepeat({
 setTimeout(() => { console.log('sent', r.count()); r.stop(); }, 1000);
 ```
 
-`api.send` throws if the app is not connected — wrap in `try`/`catch` if you call it speculatively.
+`api.send` throws if the app is not connected, so wrap in `try`/`catch` if you call it speculatively.
 
 ### Listen for frames
 
-Bus RX only — frames you send via `api.send` are **not** echoed to listeners (mirrors the underlying `onCanFrame` semantics). Both return an unsubscribe function.
+Bus RX only: frames you send via `api.send` are **not** echoed to listeners (mirrors the underlying `onCanFrame` semantics). Both return an unsubscribe function.
 
 ```js
 // Per-ID
@@ -88,9 +90,17 @@ api.simulator.setBogus(true);  // enable random noise traffic
 await api.simulator.stop();
 ```
 
+The virtual bus behaves like a small car network:
+
+- **Cyclic traffic**: every message has its own cycle time (20 ms for speed / RPM / wheel speeds up to 1 s for the odometer), powertrain frames carry an alive counter and XOR checksum in bytes 6–7, and bogus traffic is a mix of static frames, counters, drifting sensor values and status bits with varying DLCs.
+- **Vehicle model**: six-speed gearbox with shift points, acceleration that tails off in higher gears, coast-down, engine warm-up, fuel level and odometer. Turn signals blink on the bus.
+- **Diagnostics**: an engine ECU answers UDS over ISO-TP on `7E0` → `7E8` (functional `7DF`): `10` session control, `11` reset, `14`/`19` DTCs, `22` read data (`F190` VIN, `F187`, `F18C`, `F195`, `F186`, live `F40C`/`F40D`/`F405`), `27` security access and `3E` tester present, plus OBD-II modes `01` and `09`. Extended sessions time out after 5 s without Tester Present; DID `1337` only reads after security access.
+
+Frames injected by Send, Signals or the Fuzzer still drive the cluster exactly as before, because the cluster does not check counters or checksums.
+
 ### Signals
 
-Persistent, toggleable periodic senders shown in the sidebar.
+Persistent, toggleable periodic senders shown in the Signals tab.
 
 ```js
 api.signals.list();
@@ -114,15 +124,23 @@ api.state();
 // → { isConnected, simActive, rxCount, txCount, errCount, signalCount, repeatActive }
 ```
 
+## Tests
+
+The simulator has a Node test suite (no dependencies, Node 22+):
+
+```sh
+node --test test/
+```
+
 ## How It Works
 
 The app implements the **gs_usb protocol** over WebUSB:
 
-1. **Device connection** — `navigator.usb.requestDevice()` with VID/PID filters
-2. **Configuration** — USB vendor control transfers set host byte order, CAN bitrate (computed from the device's actual clock via `BT_CONST`), and operating mode
-3. **Data transfer** — CAN frames are sent/received as 20-byte `gs_host_frame` structs over USB bulk endpoints
-4. **Serialized TX** — all outbound frames go through a single queue to prevent USB contention
-5. **Throttled rendering** — the UI updates at a fixed rate (5Hz) regardless of bus speed, keeping the browser responsive
+1. **Device connection**: `navigator.usb.requestDevice()` with VID/PID filters
+2. **Configuration**: USB vendor control transfers set host byte order, CAN bitrate (computed from the device's actual clock via `BT_CONST`), and operating mode
+3. **Data transfer**: CAN frames are sent/received as 20-byte `gs_host_frame` structs over USB bulk endpoints
+4. **Serialized TX**: all outbound frames go through a single queue to prevent USB contention
+5. **Throttled rendering**: the UI updates at a fixed rate (5Hz) regardless of bus speed, keeping the browser responsive
 
 ## License
 

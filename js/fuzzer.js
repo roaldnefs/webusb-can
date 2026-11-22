@@ -119,7 +119,7 @@ export function startFuzzer(config) {
 
   const btn = document.getElementById('fuzzBtn');
   if (btn) {
-    btn.textContent = 'Stop Fuzz';
+    btn.textContent = 'Stop fuzzing';
     btn.classList.add('paused');
   }
   return true;
@@ -134,7 +134,7 @@ export function stopFuzzer() {
 
   const btn = document.getElementById('fuzzBtn');
   if (btn) {
-    btn.textContent = 'Start Fuzz';
+    btn.textContent = 'Start fuzzing';
     btn.classList.remove('paused');
   }
 }

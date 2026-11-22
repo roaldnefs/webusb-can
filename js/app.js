@@ -8,7 +8,7 @@ import { startCAN, stopCAN } from './gsusb.js';
 import { startFuzzer, stopFuzzer, isFuzzerActive } from './fuzzer.js';
 import { handleSend, toggleRepeat, stopRepeat } from './send.js';
 import { renderSignals, toggleSignal, addSignal, removeSignal, stopAllSignals, editSignal } from './signals.js';
-import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, toggleView, setClusterVisible } from './ui.js';
+import { updateConnectionUI, addSystemLog, renderTick, togglePause, setFilter, rebuildLog, clearLog, exportLog, setView, setClusterVisible } from './ui.js';
 import { udsRequest } from './uds.js';
 import { resetIsoTp } from './isotp.js';
 import { startTesterPresent, stopTesterPresent } from './tester-present.js';
@@ -30,7 +30,9 @@ window.clearLog = clearLog;
 window.exportLog = exportLog;
 window.handleUdsSend = handleUdsSend;
 window.toggleTheme = toggleTheme;
-window.toggleView = toggleView;
+window.setView = setView;
+window.showTool = showTool;
+window.showPane = name => { document.body.dataset.pane = name; };
 window.toggleTesterPresent = toggleTesterPresent;
 window.startSimulator = startSimulator;
 window.stopSimulator = stopSimulator;
@@ -72,6 +74,50 @@ for (const id of ['udsTxId', 'udsRxId']) {
 document.getElementById('sendData').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleSend();
 });
+document.getElementById('udsRequest').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleUdsSend();
+});
+
+// Drive the simulator with the arrow keys (unless typing in a field).
+const SIM_KEYS = {
+  ArrowUp: on => pressAccelerator(on),
+  ArrowDown: on => pressBrake(on),
+  ArrowLeft: on => { if (on) toggleSignalLeft(); },
+  ArrowRight: on => { if (on) toggleSignalRight(); },
+};
+for (const type of ['keydown', 'keyup']) {
+  document.addEventListener(type, e => {
+    const action = SIM_KEYS[e.key];
+    if (!action || !state.simActive || e.repeat) return;
+    if (e.target.closest('input, select, textarea')) return;
+    e.preventDefault();
+    action(type === 'keydown');
+  });
+}
+
+// Tool tabs: one tool visible at a time; the choice survives a reload.
+const TOOL_KEY = 'webusb-can-tool';
+function showTool(name) {
+  for (const tab of document.querySelectorAll('.tool-tab')) {
+    tab.setAttribute('aria-selected', String(tab.dataset.tool === name));
+  }
+  for (const panel of document.querySelectorAll('.tool')) {
+    panel.hidden = panel.dataset.tool !== name;
+  }
+  try { localStorage.setItem(TOOL_KEY, name); } catch (e) { /* ignore */ }
+}
+{
+  let saved = 'signals';
+  try { saved = localStorage.getItem(TOOL_KEY) || saved; } catch (e) { /* ignore */ }
+  showTool(document.querySelector(`.tool[data-tool="${saved}"]`) ? saved : 'signals');
+}
+
+// A dot on a tab shows that its tool is sending in the background.
+setInterval(() => {
+  document.getElementById('dotSignals').hidden = !state.signals.some(s => s.active);
+  document.getElementById('dotUds').hidden = !document.getElementById('udsTesterPresent').checked;
+  document.getElementById('dotFuzzer').hidden = !isFuzzerActive();
+}, 300);
 
 // WebUSB support check — show a blocking overlay and skip USB-dependent setup.
 if (!navigator.usb) {
@@ -202,18 +248,33 @@ async function handleUdsSend() {
   }
 
   addSystemLog(`UDS request -> 0x${txId.toString(16).toUpperCase()}: ${fmtHex(bytes)}`);
+  showUdsResult('', `Waiting for a reply to ${fmtHex(bytes)}`, '');
   try {
     const result = await udsRequest(txId, rxId, bytes);
     if (result.ok) {
       addSystemLog(`UDS OK  SID=0x${(result.sid).toString(16).toUpperCase().padStart(2,'0')} data: ${fmtHex(result.data)}  "${fmtAscii(result.data)}"`);
+      showUdsResult('ok', `Positive response to ${fmtHex(bytes)}`,
+        result.data.length ? `${fmtHex(result.data)}\n${fmtAscii(result.data)}` : '');
     } else {
       const sidStr = result.sid.toString(16).toUpperCase().padStart(2, '0');
       const nrcStr = result.nrc < 0 ? '--' : result.nrc.toString(16).toUpperCase().padStart(2, '0');
       addSystemLog(`UDS NRC SID=0x${sidStr} 0x${nrcStr} ${result.name}`);
+      showUdsResult('fail', `Negative response to ${fmtHex(bytes)}`, `0x${nrcStr} ${result.name}`);
     }
   } catch (err) {
     addSystemLog(`UDS error: ${err.message}`);
+    showUdsResult('fail', `No reply to ${fmtHex(bytes)}`, err.message);
   }
+}
+
+// The log scrolls past in milliseconds on a busy bus, so the reply is also
+// shown in the UDS card itself.
+function showUdsResult(kind, status, bytes) {
+  const box = document.getElementById('udsResult');
+  box.hidden = false;
+  box.className = 'uds-result ' + kind;
+  document.getElementById('udsResultStatus').textContent = status;
+  document.getElementById('udsResultBytes').textContent = bytes;
 }
 
 function toggleTesterPresent(checkbox) {
