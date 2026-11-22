@@ -30,6 +30,10 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000` in Chrome or Edge. Connect your CAN adapter, select the bitrate and mode, and click **Connect**.
 
+### Install as an app
+
+The app is a Progressive Web App. In Chrome or Edge, use **Install** in the address bar to get it in its own window. Once it has been loaded once it also works offline, including the simulator.
+
 ## Console API
 
 Open Developer Tools and drive the app from `window.api`.
