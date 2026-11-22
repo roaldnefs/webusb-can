@@ -74,9 +74,9 @@ const SPEED_TOL_KMH = 10;      // 0x244 vs ABS-avg tolerance (Challenge 07)
 const VIN_INTERVAL_MS = 1000;  // total cycle for the 3 VIN chunks
 const BLINK_HALF_MS = 350;     // turn-signal on / off phase (~85 flashes/min)
 const WHEEL_SCALE = [1, 1.002, 0.999, 1.003];   // FL FR RL RR tyre wear
-const SWEEP_MS = 1200;         // ignition-on needle sweep
-const BULB_CHECK_MS = 1500;    // ignition-on warning lamp test
-const NEEDLE_LAG_S = 0.08;     // gauge needle inertia
+const SWEEP_MS = 1200;
+const BULB_CHECK_MS = 1500;
+const NEEDLE_LAG_S = 0.08;
 const EGG_FLASH_MS = 1500;
 const LCD_FLASH_MS = 2000;
 const VIN_STR = 'WVWZZZ1KZAW123456';   // 17 chars, valid VAG-style format
@@ -115,7 +115,6 @@ const sim = {
 };
 resetVehicle(sim);   // speedKmh, rpm, gear, coolantC, fuelPct, odoKm
 
-// Gauge needle positions — lag behind the real values (see renderCluster).
 const needle = { speedKmh: 0, rpm: 0, lastRender: 0 };
 
 const ecu = createEcu({
@@ -142,7 +141,6 @@ function protect(id, data) {
   return data;
 }
 
-// Sensor readings wobble a little while the car is moving.
 function sensorSpeed(scale = 1) {
   if (sim.speedKmh <= 0) return 0;
   const kmh = sim.speedKmh * scale + (Math.random() - 0.5) * 0.08;
@@ -358,7 +356,6 @@ function generateNoisePool() {
   }
 }
 
-// Emit a periodic message if its cycle time has elapsed.
 function emitIfDue(msg, now) {
   if (now < msg.due) return;
   msg.due += msg.interval;
@@ -570,7 +567,7 @@ export function renderCluster() {
   const warnAir  = document.getElementById('warnAirbag');
   const warnOil  = document.getElementById('warnOilPressure');
   const warnCe   = document.getElementById('warnCheckEngine');
-  const bulbCheck = sinceStart < BULB_CHECK_MS;   // all lamps lit at ignition-on
+  const bulbCheck = sinceStart < BULB_CHECK_MS;
   if (warnImmo) warnImmo.classList.toggle('active', bulbCheck || sim.warn.immobilizer);
   if (warnAir)  warnAir.classList.toggle('active', bulbCheck || sim.warn.airbag);
   if (warnOil)  warnOil.classList.toggle('active', bulbCheck || sim.warn.oilPressure);
@@ -579,7 +576,6 @@ export function renderCluster() {
   const gear = document.getElementById('clusterGear');
   if (gear) gear.textContent = sim.gear;
 
-  // Control buttons show what is currently held.
   const pressed = {
     simBtnAccel: sim.acceleratorPressed,
     simBtnBrake: sim.brakePressed,

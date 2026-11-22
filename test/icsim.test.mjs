@@ -34,7 +34,6 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const el = (id) => document.getElementById(id);
 const needleAngle = (id) => parseFloat(el(id).attrs.transform.match(/rotate\(([-\d.]+)/)[1]);
 
-// Capture bus traffic for `ms`, grouped by ID.
 async function capture(ms) {
   const byId = new Map();
   const off = onAnyFrame(({ id, data }) => {

@@ -80,7 +80,6 @@ export function createEcu({ send, live, vin, onReset = () => {}, now = () => per
     0xF40C: () => u16(Math.round(live().rpm * 4)),
     0xF40D: () => [Math.min(0xFF, Math.round(live().speedKmh))],
     0xF405: () => [Math.round(live().coolantC) + 40],
-    // Only readable after SecurityAccess.
     0x1337: () => ascii('FLAG{s33d_k3y_xor}'),
   };
   const SECURED_DIDS = new Set([0x1337]);
@@ -125,7 +124,6 @@ export function createEcu({ send, live, vin, onReset = () => {}, now = () => per
     next();
   }
 
-  // Feed the ECU one frame transmitted onto the bus.
   function onFrame(id, data) {
     if (id !== ECU_REQ_ID && id !== ECU_FUNC_ID) return;
     if (!data.length) return;

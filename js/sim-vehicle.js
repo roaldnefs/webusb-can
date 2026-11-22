@@ -39,7 +39,6 @@ export function resetVehicle(v) {
 
 const drivelineRpm = (v) => v.speedKmh / GEAR_KMH_PER_KRPM[v.gear] * 1000;
 
-// Advance the vehicle by dt seconds.
 //   accel / brake — pedal state
 //   speedPinned   — the bus is dictating speed; skip pedal physics
 //   rpmPinned     — the bus is dictating RPM; leave v.rpm alone
