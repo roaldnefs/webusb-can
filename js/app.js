@@ -393,3 +393,8 @@ function toggleTheme() {
   localStorage.setItem('webusb-can-theme', next);
 }
 
+// Offline support and installability (see sw.js).
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
